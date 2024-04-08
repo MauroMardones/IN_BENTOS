@@ -1,0 +1,202 @@
+---
+title: "![](IEO-logo2.png){width=10cm}"
+output:
+  bookdown::pdf_document2:
+    includes:
+      before_body: titulo.sty
+    keep_tex: yes
+    number_sections: no
+    toc: true
+    toc_depth: 3
+bibliography: INBENTO.bib
+csl: apa.csl
+link-citations: yes
+linkcolor: blue
+indent: no
+header-includes:
+- \usepackage{fancyhdr}
+- \pagestyle{fancy}
+- \fancyhf{}
+- \lfoot[\thepage]{}
+- \rfoot[]{\thepage}
+- \fontsize{12}{22}
+- \selectfont
+---
+\newpage
+
+```{r setup1, echo =FALSE}
+rm(list = ls())
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      fig.align = 'center',
+                      dev = 'jpeg',
+                      dpi = 300, 
+                      fig.align='center')
+#XQuartz is a mess, put this in your onload to default to cairo instead
+options(bitmapType = "cairo") 
+# (https://github.com/tidyverse/ggplot2/issues/2655)
+# Lo mapas se hacen mas rapido
+```
+
+```{r libs}
+library(tidyverse)
+library(ggridges)
+library(readxl)
+library(here)
+library(lubridate)
+library(readr)
+library(ggthemes)
+library(hrbrthemes)
+library(kableExtra)
+library(gtsummary)
+library(egg)
+library(ggthemes)
+```
+
+
+
+# CONTEXTO
+
+# DATA
+
+Existen tres tipos de archivos que contienen los datos de fauna y registros.  Entre ellos, lo comun es la Columna `Estación` . Los archivos son `Datos_estaciones_ACUVEN_3D_IN-BENTO.xlsx`,  `Fauna_danos_all.xlsx` y `Station.xlsx`
+
+El archivo `Station.xlsx` tieme el area asociada
+[@Indicator]
+
+```{r}
+fauna <- read_excel(here("DATOS",
+                         "Fauna_danos_all.xlsx"))
+station <- read_excel(here("DATOS",
+                         "Station.xlsx"))
+rendi <- read_excel(here("DATOS",
+                         "Datos_estaciones_ACUVEN_3D_IN-BENTO.xlsx"),
+                         skip = 3)
+```
+## Datos Fauna
+
+```{r eval=FALSE}
+unique(fauna$ID_FINAL)
+names(fauna)
+```
+
+Agrupar por diversas variables 
+
+```{r}
+cantes <- fauna %>% 
+  group_by(ID_FINAL) %>%
+  summarize(SUM = sum(`Total Indiv...49`,
+                                     na.rm = TRUE),
+            SUMPES = sum(`Peso total (g)...50`))
+
+indsum <- ggplot(cantes %>% 
+                   drop_na(ID_FINAL))+
+  geom_col(aes(x =ID_FINAL, y= SUM, fill=ID_FINAL))+
+  theme_few()+
+  theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5,
+                                     size = 5),
+        legend.position = "none")
+  
+
+pessum <- ggplot(cantes %>% 
+                   drop_na(ID_FINAL))+
+  geom_col(aes(x =ID_FINAL, y= SUMPES, fill=ID_FINAL))+
+  theme_few()+
+  theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5,
+                                     size = 5),
+        legend.position = "none")
+```
+
+
+```{r}
+indsum
+```
+
+
+```{r}
+pessum
+```
+
+## Datos Lances
+
+```{r message=FALSE}
+setrendi <- rendi %>% 
+  group_by()
+
+den <- ggplot(rendi)+
+  geom_point(aes(Estaciones, dens))+
+  theme_few()
+
+bio <- ggplot(rendi)+
+  geom_col(aes(Estaciones, bio))+
+  theme_few()
+
+ren <- ggplot(rendi)+
+  geom_col(aes(Estaciones, rend))+
+  theme_few()
+
+area <- ggplot(rendi)+
+  geom_point(aes(area, rend))+
+  geom_smooth(aes(area, rend))+
+  theme_few()
+
+ggarrange(den, bio , ren, area, ncol=2)
+```
+Entender las profundidades 
+
+```{r message=FALSE}
+f <- ggplot(rendi)+
+  geom_histogram(aes(depth_f),
+                 binwidth = 1,
+                 fill = "transparent", color = "red")+
+  theme_few()
+i <- ggplot(rendi)+
+  geom_histogram(aes(depth_i),
+                 binwidth = 1,
+                 fill = "transparent", color = "blue")+
+  theme_few()
+m <- ggplot(rendi)+
+  geom_histogram(aes(depth_m),
+                 binwidth = 1,
+                 fill = "transparent", color = "green")+
+  theme_few()
+
+ggarrange(f, i , m , ncol=3)
+```
+
+
+# Unir bases
+
+```{r}
+names(fauna)
+names(station)
+names(rendi)
+```
+Cambio el nombre estación en `fauna`
+
+```{r echo=TRUE}
+fauna1 <- fauna %>% 
+  rename("Estaciones"="ESTACIÓN") %>% 
+  mutate(Estaciones = as.double(str_replace(Estaciones, "^E0*", ""))) %>% 
+  drop_na(Estaciones)
+```
+
+
+```{r echo=TRUE}
+base1  <- left_join(rendi, fauna1,
+                   by="Estaciones")
+```
+```{r echo=TRUE}
+glimpse(base1)
+
+```
+
+
+\newpage
+
+# REFERENCIAS
