@@ -1,2 +1,4 @@
 # IN_BENTOS
-Project European Union to know VME in Cadiz Gulf associated to Chamelea gallina fishery
+
+Project European Union to know VME in Cadiz Gulf associated to Chamelea gallina fishery.
+Main objective is calculate SAR and SOS regading ICES methodology
