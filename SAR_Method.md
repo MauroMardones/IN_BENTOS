@@ -2,7 +2,7 @@
 title: "SAR"
 subtitle: "Datos Monitoreo poblacional FEMP_AND_04"
 author: "Mardones, M; Magro, Ana"
-date:  "`r format(Sys.time(), '%d %B, %Y')`"
+date:  "09 April, 2024"
 bibliography: INBENTO.bib
 csl: apa.csl
 link-citations: yes
@@ -28,22 +28,10 @@ editor_options:
 ---
 \newpage
 
-```{r setup1, echo =FALSE}
-rm(list = ls())
-knitr::opts_chunk$set(echo = TRUE,
-                      message = FALSE,
-                      warning = FALSE,
-                      fig.align = 'center',
-                      dev = 'jpeg',
-                      dpi = 300, 
-                      fig.align='center')
-#XQuartz is a mess, put this in your onload to default to cairo instead
-options(bitmapType = "cairo") 
-# (https://github.com/tidyverse/ggplot2/issues/2655)
-# Lo mapas se hacen mas rapido
-```
 
-```{r libs}
+
+
+```r
 library(tidyverse)
 library(ggridges)
 library(readxl)
@@ -70,7 +58,8 @@ Existen tres tipos de archivos que contienen los datos de fauna y registros.  En
 El archivo `Station.xlsx` tieme el area asociada
 [@Indicator]
 
-```{r}
+
+```r
 fauna <- read_excel(here("DATOS",
                          "Fauna_danos_all.xlsx"))
 station <- read_excel(here("DATOS",
@@ -81,14 +70,16 @@ rendi <- read_excel(here("DATOS",
 ```
 ## Datos Fauna
 
-```{r eval=FALSE}
+
+```r
 unique(fauna$ID_FINAL)
 names(fauna)
 ```
 
 Agrupar por diversas variables 
 
-```{r}
+
+```r
 cantes <- fauna %>% 
   group_by(ID_FINAL) %>%
   summarize(SUM = sum(`Total Indiv...49`,
@@ -118,18 +109,25 @@ pessum <- ggplot(cantes %>%
 ```
 
 
-```{r}
+
+```r
 indsum
 ```
 
+<img src="SAR_Method_files/figure-html/unnamed-chunk-4-1.jpeg" style="display: block; margin: auto;" />
 
-```{r}
+
+
+```r
 pessum
 ```
 
+<img src="SAR_Method_files/figure-html/unnamed-chunk-5-1.jpeg" style="display: block; margin: auto;" />
+
 ## Datos Lances
 
-```{r message=FALSE}
+
+```r
 setrendi <- rendi %>% 
   group_by()
 
@@ -152,9 +150,12 @@ area <- ggplot(rendi)+
 
 ggarrange(den, bio , ren, area, ncol=2)
 ```
+
+<img src="SAR_Method_files/figure-html/unnamed-chunk-6-1.jpeg" style="display: block; margin: auto;" />
 Entender las profundidades 
 
-```{r message=FALSE}
+
+```r
 f <- ggplot(rendi)+
   geom_histogram(aes(depth_f),
                  binwidth = 1,
@@ -174,20 +175,78 @@ m <- ggplot(rendi)+
 ggarrange(f, i , m , ncol=3)
 ```
 
+<img src="SAR_Method_files/figure-html/unnamed-chunk-7-1.jpeg" style="display: block; margin: auto;" />
+
 ## Analisis jerarquicos
 
 (progreso)
 
 ## Unir bases
 
-```{r}
+
+```r
 names(fauna)
+```
+
+```
+##  [1] "CAMPAÑA"              "ESTACIÓN"             "CATEGORÍA"           
+##  [4] "FECHA"                "PHYLA/Subphylum"      "GRUPO"               
+##  [7] "ID_CAMPO"             "ID_FINAL"             "ESTACIÓN + CATEGORÍA"
+## [10] "N_ DO...10"           "P_D0...11"            "N_D1...12"           
+## [13] "P_D1...13"            "N_D2...14"            "P_D2...15"           
+## [16] "N_D3...16"            "P_D3...17"            "Total Indiv...18"    
+## [19] "Peso total (g)...19"  "N_ DO...20"           "P_D0...21"           
+## [22] "N_D1...22"            "P_D1...23"            "N_D2...24"           
+## [25] "P_D2...25"            "N_D3...26"            "P_D3...27"           
+## [28] "Total Indiv...28"     "Peso total (g)...29"  "FP"                  
+## [31] "N_ DO...31"           "P_D0...32"            "N_D1...33"           
+## [34] "P_D1...34"            "N_D2...35"            "P_D2...36"           
+## [37] "N_D3...37"            "P_D3...38"            "Total Indiv...39"    
+## [40] "Peso total (g)...40"  "N_ DO...41"           "P_D0...42"           
+## [43] "N_D1...43"            "P_D1...44"            "N_D2...45"           
+## [46] "P_D2...46"            "N_D3...47"            "P_D3...48"           
+## [49] "Total Indiv...49"     "Peso total (g)...50"  "%D0"                 
+## [52] "%D1"                  "%D2"                  "%D3"                 
+## [55] "%DT"
+```
+
+```r
 names(station)
+```
+
+```
+## [1] "Estaciones"    "Observaciones" "area"          "station"
+```
+
+```r
 names(rendi)
+```
+
+```
+##  [1] "Estaciones"              "Observaciones"          
+##  [3] "Date"                    "Track"                  
+##  [5] "Track (m)"               "depth_i"                
+##  [7] "depth_f"                 "depth_m"                
+##  [9] "vel_i"                   "vel_f"                  
+## [11] "vel_m"                   "hora_i"                 
+## [13] "hora_f"                  "g...14"                 
+## [15] "min...15"                "g...16"                 
+## [17] "min...17"                "LAT"                    
+## [19] "LONG"                    "Nºrejillas"             
+## [21] "Vol (l.)...21"           "Vol (l.)...22"          
+## [23] "P (total + cascajo) (g)" "SW_tolva"               
+## [25] "CSW"                     "CSW_tolva"              
+## [27] "N"                       "N_tolva"                
+## [29] "area"                    "dens"                   
+## [31] "bio"                     "P cascajo (g)"          
+## [33] "P cascajo_tolva"         "Tow_time"               
+## [35] "PComercial (kg)"         "rend"                   
+## [37] "ID"                      "FP"
 ```
 Cambio el nombre estación en `fauna`
 
-```{r echo=TRUE}
+
+```r
 fauna1 <- fauna %>% 
   rename("Estaciones"="ESTACIÓN") %>% 
   mutate(Estaciones = as.double(str_replace(Estaciones, "^E0*", ""))) %>% 
@@ -195,7 +254,8 @@ fauna1 <- fauna %>%
 ```
 
 
-```{r echo=TRUE}
+
+```r
 base1  <- left_join(rendi, fauna1,
                    by="Estaciones")
 ```
@@ -204,16 +264,42 @@ base1  <- left_join(rendi, fauna1,
 Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Estos datos vectoriales fueron obtenidos desde la paina oficial de datos espaciales de la Junta de Andalucia [Shapesfile](https://portalrediam.cica.es/descargas?path=%2F08_AMBITOS_INTERES_AMBIENTAL%2F02_LITORAL_MARINO%2F04_SOCIOECONOMIA%2FZonasProduccionMoluscos)
 
 ## Leo Shapes y transformo a la proyección correcta.
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-costandalucia <- st_read(here("SHP_Chirla",
-                              "costa_proyectada.shp"))
-grilla <- st_read(here("SHP_Chirla",
-                              "cuadriculas_definitivo.shp"))
-bati <- st_read(here("SHP_Chirla",
-                     "batimetria_rediam20x20_10m_id.shp"))
+
+```
+## Reading layer `costa_proyectada' from data source 
+##   `/Users/mauriciomardones/IEO/IN_BENTOS/SHP_Chirla/costa_proyectada.shp' 
+##   using driver `ESRI Shapefile'
+## Simple feature collection with 10 features and 4 fields
+## Geometry type: POLYGON
+## Dimension:     XY
+## Bounding box:  xmin: -34115.27 ymin: 3891271 xmax: 301588.8 ymax: 4173659
+## Projected CRS: WGS_1984_Complex_UTM_Zone_30N
+```
+
+```
+## Reading layer `cuadriculas_definitivo' from data source 
+##   `/Users/mauriciomardones/IEO/IN_BENTOS/SHP_Chirla/cuadriculas_definitivo.shp' 
+##   using driver `ESRI Shapefile'
+## Simple feature collection with 219 features and 2 fields
+## Geometry type: POLYGON
+## Dimension:     XY
+## Bounding box:  xmin: 109273.6 ymin: 4071852 xmax: 198073.5 ymax: 4125446
+## Projected CRS: ETRS89 / UTM zone 30N
+```
+
+```
+## Reading layer `batimetria_rediam20x20_10m_id' from data source 
+##   `/Users/mauriciomardones/IEO/IN_BENTOS/SHP_Chirla/batimetria_rediam20x20_10m_id.shp' 
+##   using driver `ESRI Shapefile'
+## Simple feature collection with 1 feature and 1 field
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: 99337.29 ymin: 4070000 xmax: 201873.6 ymax: 4127412
+## Projected CRS: ETRS89 / UTM zone 30N
 ```
 ## Transforma data
-```{r message=FALSE, warning=FALSE}
+
+```r
 grilla1 <- st_transform(grilla, "+init=epsg:4326")
 costandalucia1 <- st_transform(costandalucia, "+init=epsg:4326")
 bati1 <- st_transform(bati, "+init=epsg:4326")
@@ -221,7 +307,8 @@ bati1 <- st_transform(bati, "+init=epsg:4326")
 
 ploteo test
  
-```{r warning=FALSE}
+
+```r
 mas <- ggplot() +
   #geom_sf(data = lito1, fill="white", color="blue") +
   geom_sf(data = grilla1, fill="white", color="red") +
@@ -251,10 +338,38 @@ mas <- ggplot() +
 mas
 ```
 
+<img src="SAR_Method_files/figure-html/unnamed-chunk-13-1.jpeg" style="display: block; margin: auto;" />
+
 Ahora identifico la base que quiero plotear
 
-```{r ssmu1}
+
+```r
 names(rendi)
+```
+
+```
+##  [1] "Estaciones"              "Observaciones"          
+##  [3] "Date"                    "Track"                  
+##  [5] "Track (m)"               "depth_i"                
+##  [7] "depth_f"                 "depth_m"                
+##  [9] "vel_i"                   "vel_f"                  
+## [11] "vel_m"                   "hora_i"                 
+## [13] "hora_f"                  "g...14"                 
+## [15] "min...15"                "g...16"                 
+## [17] "min...17"                "LAT"                    
+## [19] "LONG"                    "Nºrejillas"             
+## [21] "Vol (l.)...21"           "Vol (l.)...22"          
+## [23] "P (total + cascajo) (g)" "SW_tolva"               
+## [25] "CSW"                     "CSW_tolva"              
+## [27] "N"                       "N_tolva"                
+## [29] "area"                    "dens"                   
+## [31] "bio"                     "P cascajo (g)"          
+## [33] "P cascajo_tolva"         "Tow_time"               
+## [35] "PComercial (kg)"         "rend"                   
+## [37] "ID"                      "FP"
+```
+
+```r
 rendi2 <- rendi %>% 
   mutate(LONG1 = LONG*-1) %>% 
   st_as_sf(coords = c("LONG1", "LAT"),  
@@ -266,7 +381,8 @@ that will be called up later. This grid is 1x0.5 degrees which allows a
 clear visualization of the processes, whether biological and/or
 environmental.
 
-```{r gri}
+
+```r
 #Aca dejo este code para hacer una grilla
 # Grid<- suba1aa  %>% #pm481 es el plot base original linea 481
 #   sf::st_make_grid(cellsize = c(1,0.5)) %>% # para que quede cuadrada
@@ -287,12 +403,36 @@ grilla2 <- grilla1 %>%
 grilla3 <- st_join(grilla2, rendi2)
 names(grilla3)
 ```
+
+```
+##  [1] "Estaciones.x"            "area.x"                 
+##  [3] "Estaciones.y"            "Observaciones"          
+##  [5] "Date"                    "Track"                  
+##  [7] "Track (m)"               "depth_i"                
+##  [9] "depth_f"                 "depth_m"                
+## [11] "vel_i"                   "vel_f"                  
+## [13] "vel_m"                   "hora_i"                 
+## [15] "hora_f"                  "g...14"                 
+## [17] "min...15"                "g...16"                 
+## [19] "min...17"                "LONG"                   
+## [21] "Nºrejillas"              "Vol (l.)...21"          
+## [23] "Vol (l.)...22"           "P (total + cascajo) (g)"
+## [25] "SW_tolva"                "CSW"                    
+## [27] "CSW_tolva"               "N"                      
+## [29] "N_tolva"                 "area.y"                 
+## [31] "dens"                    "bio"                    
+## [33] "P cascajo (g)"           "P cascajo_tolva"        
+## [35] "Tow_time"                "PComercial (kg)"        
+## [37] "rend"                    "ID"                     
+## [39] "FP"                      "geometry"
+```
 repito el mapa con rendimientos
 
-```{r warning=FALSE}
+
+```r
 masrend <- ggplot() +
   #geom_sf(data = lito1, fill="white", color="blue") +
-  geom_sf(data = grilla1, fill="white", color="red", alpha=0.1) +
+  geom_sf(data = grilla1, fill="white", color="red") +
   geom_sf(data = costandalucia1, fill="#fee8c8") +
   geom_sf(data = grilla3 %>% 
             filter(rend>0.01), aes(fill=rend))+
@@ -320,9 +460,12 @@ masrend <- ggplot() +
 
 masrend
 ```
+
+<img src="SAR_Method_files/figure-html/unnamed-chunk-14-1.jpeg" style="display: block; margin: auto;" />
 repito el mapa con rendimientos
 
-```{r warning=FALSE}
+
+```r
 mascapt <- ggplot() +
   #geom_sf(data = lito1, fill="white", color="blue") +
   geom_sf(data = grilla1, fill="white", color="red") +
@@ -355,6 +498,8 @@ mascapt <- ggplot() +
 
 mascapt
 ```
+
+<img src="SAR_Method_files/figure-html/unnamed-chunk-15-1.jpeg" style="display: block; margin: auto;" />
 
 \newpage
 
