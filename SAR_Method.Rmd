@@ -97,7 +97,7 @@ indsum <- ggplot(cantes %>%
   theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
                                      vjust = 0.5,
-                                     size = 5),
+                                     size = 8),
         legend.position = "none")
   
 
@@ -169,6 +169,9 @@ m <- ggplot(rendi)+
 ggarrange(f, i , m , ncol=3)
 ```
 
+## Analisis jerarquicos
+
+
 
 # Unir bases
 
@@ -196,6 +199,81 @@ glimpse(base1)
 
 ```
 
+
+# MAPAS
+
+Ahora produzco un mapa de las `Zonas De Producción`. Estos datos vectoriales fueron obtenidos desde la paina oficial de datos espaciales de la Junta de Andalucia [Shapesfile](https://portalrediam.cica.es/descargas?path=%2F08_AMBITOS_INTERES_AMBIENTAL%2F02_LITORAL_MARINO%2F04_SOCIOECONOMIA%2FZonasProduccionMoluscos)
+
+Para ello tengo una seré de `.shp` para ir explorando.
+
+Debo identificar clsaramete los poligonos utilizados en coquina.
+
+## Leo Shapes y transformo a la proyección correcta.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+costandalucia <- st_read(here("SHP_Chirla",
+                              "costa_proyectada.shp"))
+grilla <- st_read(here("SHP_Chirla",
+                              "cuadriculas_definitivo.shp"))
+
+#zonapro <- st_read('~/IEO/DATA/Shapefiles_Andalucia/ZonasProduccionMoluscos.shp')
+zonapro <- st_read('~/IEO/DATA/Shapefiles_Andalucia/zzpp_resolucion_2023_25830.shp')
+zonape <- st_read('~/IEO/DATA/Shapefiles_Andalucia/05_09_ZonaIdoneaPesca.shp')
+fisicomar <- st_read('~/IEO/DATA/Shapefiles_Andalucia/05_01_FisiograficoMarino.shp')
+playas <- st_read('~/IEO/DATA/Shapefiles_Andalucia/playas.shp')
+lito <- st_read('~/IEO/DATA/Shapefiles_Andalucia/05_02_Litologia.shp')
+hidro <- st_read('~/IEO/DATA/Shapefiles_Andalucia/red_hidrografica.shp')
+cuencas <- st_read('~/IEO/DATA/Shapefiles_Andalucia/cuencas.shp')
+costa <- st_read('~/IEO/DATA/Shapefiles_Andalucia/costa_proyectada.shp')
+```
+## Transforma data
+```{r message=FALSE, warning=FALSE}
+grilla1 <- st_transform(grilla, "+init=epsg:4326")
+costandalucia1 <- st_transform(costandalucia, "+init=epsg:4326")
+zonapro1 <- st_transform(zonapro, "+init=epsg:4326")
+zonape1 <- st_transform(zonape, "+init=epsg:4326")
+fisicomar1 <- st_transform(fisicomar, "+init=epsg:4326")
+playas1 <- st_transform(playas, "+init=epsg:4326")
+lito1 <- st_transform(lito, "+init=epsg:4326")
+spain1 <- st_transform(spain, "+init=epsg:4326")
+portug1 <- st_transform(portug, "+init=epsg:4326")
+cuencas1 <- st_transform(cuencas, "+init=epsg:4326")
+#lmarino1 <- st_transform(lmarino, "+init=epsg:4326")
+hidro1 <- st_transform(hidro, "+init=epsg:4326")
+costa1 <- st_transform(costa, "+init=epsg:4326")
+#chile1 <- st_transform(chile, "+init=epsg:4326")
+```
+
+# Mapa
+ 
+```{r warning=FALSE}
+mas <- ggplot() +
+  geom_sf(data = grilla1, fill="white", color="red") +
+  geom_sf(data = costandalucia1, fill="white") +
+  #geom_sf(data = zonapro1, aes(fill=ZONA)) +
+  # geom_sf(data = fisicomar1, alpha=0.1,
+  #         linetype=5) +
+  scale_fill_viridis_d(option="H",
+                       alpha=.5)+
+  coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))+
+  # ggrepel::geom_label_repel(
+  #   data = zonapro1,
+  #   aes(label = ZONA, geometry = geometry),
+  #   stat = "sf_coordinates",
+  #   min.segment.length = ,
+  #   colour = "black",
+  #   size = 2,
+  #   segment.colour = "black",
+  #   box.padding = 0.7,
+  #   max.overlaps = 50) +
+  theme_few()+
+  theme(legend.position = "none")+
+  xlim(-7.6,-6)+
+  ylim(36.6, 37.4)
+mas
+```
 
 \newpage
 
