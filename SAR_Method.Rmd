@@ -377,6 +377,12 @@ calcular_distancia <- function(lat1, lon1, lat2, lon2) {
 }
 
 datos <- cajasfilm
+# Convertir la columna de fecha y hora a un objeto POSIXct con lubridate
+datos$fecha_hora <- ymd_hms(paste(datos$FECHA, datos$HORA))
+
+# Ordenar el dataframe por fecha y hora
+datos <- datos %>% 
+  arrange(fecha_hora)
 # Calcular la distancia para cada fila del dataframe
 datos$distancia <- mapply(calcular_distancia,
                           datos$N_LATITUD,
@@ -390,6 +396,7 @@ datos$distancia[1] <- NA
 ```
 
 
+
 ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las variables de velocidad en metros/seg. y tiempo recorrido por la rastra
 
 
@@ -397,7 +404,7 @@ ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las va
 datosfil <- datos %>% 
   filter(distancia < 1000) %>% 
   mutate(VELONUE = N_VELOCIDAD*0.51444, # de nudos a mts/seg
-         TIEMPO = distancia / VELONUE)
+         TIEMPO = (distancia / VELONUE) / 60)
 ```
 
 
@@ -408,27 +415,35 @@ Gafico el tiempo recorrido por barco
 ```{r}
 plottiem <- ggplot(datosfil %>% 
                group_by(MATRICULA))+
-  geom_boxplot(aes(MATRICULA, TIEMPO),
+  geom_boxplot(aes(x = reorder(MATRICULA, TIEMPO), y = TIEMPO), 
                outliers = FALSE)+
+  geom_hline(yintercept = 10, 
+             col="red")+
   theme_few()+
   theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
                                      vjust = 0.5,
-                                     size = 5))
+                                     size = 5))+
+  xlab("Matriculas") +
+  ylab(expression(paste(Tiempo (min))))
 
 plotvel <- ggplot(datosfil %>% 
                group_by(MATRICULA))+
-  geom_boxplot(aes(MATRICULA, VELONUE),
+  geom_boxplot(aes(x = reorder(MATRICULA, VELONUE),
+                   y = VELONUE),
                outliers = FALSE)+
   theme_few()+
   theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
                                      vjust = 0.5,
-                                     size = 5))
+                                     size = 5))+
+  xlab("Matriculas") +
+  ylab(expression(paste(Velocidad (m/s))))
   
   #facet_wrap(.~MES)
 ggarrange(plottiem, plotvel, ncol = 1)
 ```
+
 
 # MAPAS
 
