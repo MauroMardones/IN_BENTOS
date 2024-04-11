@@ -173,15 +173,100 @@ ggarrange(f, i , m , ncol=3)
 
 ## Data Caja Verdes
 
+Por ahora solo trabajaremos con la data entregada por Candelaria Burgos para Chirla, que son los datos del año 2008 y 2009.
+
 ```{r}
-caja1 <- read_table2(here("DATOS",
+cajas2009 <- c("Draga_01_2009.txt",
+           "Draga_02_2009.txt",
+           "Draga_03_2009.txt", 
+           "Draga_04_2009.txt" ,
+           "Draga_05_2008.txt" ,
+           "Draga_06_2008.txt",
+           "Draga_07_2008.txt" ,
+           "Draga_08_2008.txt",
+           "Draga_09_2008.txt" ,
+           "Draga_10_2008.txt",
+           "Draga_11_2008.txt" ,
+           "Draga_12_2008.txt")
+caja1 <- read.table(here("DATOS",
                          "Cajas verdes chirla",
                          "Draga_2008_2009",
-                         "Draga_01_2009.txt"))
+                         "Draga_01_2009.txt"), 
+                     sep = ";",
+                    header = TRUE)
 
-cajaa <- read_table("~/IEO/IN_BENTOS/DATOS/Cajas verdes chirla/Draga_2008_2009/Draga_1_2009.txt")
+# Lista para almacenar los datos
+lista_datos <- list()
+# Ciclo for para leer cada archivo
+for (archivo in cajas2009) {
+  # Ruta completa del archivo
+  ruta <- here("DATOS", 
+               "Cajas verdes chirla",
+               "Draga_2008_2009", archivo)
+  # Leer el archivo y agregarlo a la lista
+  datos <- read.table(ruta, sep = ";", header = TRUE)
+  lista_datos[[archivo]] <- datos
+}
 ```
 
+
+```{r}
+cajas2009uni <- do.call(rbind, lista_datos)
+```
+Verifico la dimension de la base 
+```{r}
+dim(cajas2009uni)
+```
+
+
+cambio el formato de fechas:
+
+```{r}
+cajas2009uni$FECHA <- dmy(cajas2009uni$FECHA) 
+cajassep <- cajas2009uni %>%
+  mutate(ANO = year(FECHA),
+         MES = month(FECHA),
+         DIA = day(FECHA))
+
+table(dens2124comf$ANO, dens2124comf$MES)
+table(dens2124comf$ANO)
+```
+
+De forma simple compruenbo los meses y dias con actividad de los datos sin filtrar;
+
+
+```{r}
+par=c(2,2)
+hist(cajassep$DIA)
+hist(cajassep$MES)
+hist(cajassep$N_VELOCIDAD)
+hist(cajassep$N_RUMBO)
+```
+
+Los métodos para la estimación y cartografiado del esfuerzo pesquero a partir de los datos de los VMS ya se han estudiado en varias pesquerías anteriormente. Estos estudios recomiendan un proceso en varios pasos según [@Cojan2012]: 
+
+1- Borrar los registros duplicados, 
+
+```{r}
+# Encontrar filas duplicadas
+filas_duplicadas <- duplicated(cajassep)
+# Mostrar las filas duplicadas
+datos_duplicados <- cajassep[filas_duplicadas, ]
+
+# Opcionalmente, para eliminar filas duplicadas manteniendo solo la última ocurrencia de cada fila duplicada:
+cajasfil <- cajassep[!duplicated(cajassep, fromLast = TRUE), ]
+```
+
+2- Borrar los registros en puertos, 
+
+```{r}
+cjasfilp <- cajasfil %>% 
+  filter(N_EN_PUERTO == 0)
+head(cjasfilp)
+```
+
+3- Calcular el intervalo de tiempo entre registros sucesivos, 
+4- Diferenciar entre registros de pesca y no pesca basándose en la velocidad 
 
 ## Analisis jerarquicos
 
@@ -208,6 +293,8 @@ fauna1 <- fauna %>%
 base1  <- left_join(rendi, fauna1,
                    by="Estaciones")
 ```
+
+
 ```{r echo=TRUE}
 glimpse(base1)
 
@@ -350,7 +437,7 @@ mascapt <- ggplot() +
             drop_na(`PComercial (kg)`) %>% 
             filter(`PComercial (kg)`>0.01), 
           aes(fill=cut(`PComercial (kg)`,
-                       breaks = seq(0, 80, by = 20))))+
+                       breaks = seq(0, 50, by = 5))))+
   # geom_sf(data = fisicomar1, alpha=0.1,
   #         linetype=5) +
   scale_fill_brewer(type = "qual",
