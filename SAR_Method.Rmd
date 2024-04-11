@@ -254,19 +254,26 @@ filas_duplicadas <- duplicated(cajassep)
 datos_duplicados <- cajassep[filas_duplicadas, ]
 
 # Opcionalmente, para eliminar filas duplicadas manteniendo solo la última ocurrencia de cada fila duplicada:
-cajasfil <- cajassep[!duplicated(cajassep, fromLast = TRUE), ]
+cajasfil <- cajassep[!duplicated(cajassep, 
+                                 fromLast = TRUE), ]
 ```
 
-2- Borrar los registros en puertos, 
+2- Borrar los registros en puertos. 
 
 ```{r}
-cjasfilp <- cajasfil %>% 
+cajasfilp <- cajasfil %>% 
   filter(N_EN_PUERTO == 0)
-head(cjasfilp)
+unique(cajasfilp$N_EN_PUERTO)
+hist(cajasfilp$N_VELOCIDAD)
 ```
 
 3- Calcular el intervalo de tiempo entre registros sucesivos, 
+
+
 4- Diferenciar entre registros de pesca y no pesca basándose en la velocidad 
+
+
+
 
 ## Analisis jerarquicos
 
@@ -316,9 +323,12 @@ bati <- st_read(here("SHP_Chirla",
 ```
 ## Transforma data
 ```{r message=FALSE, warning=FALSE}
-grilla1 <- st_transform(grilla, "+init=epsg:4326")
-costandalucia1 <- st_transform(costandalucia, "+init=epsg:4326")
-bati1 <- st_transform(bati, "+init=epsg:4326")
+grilla1 <- st_transform(grilla, 
+                        "+init=epsg:4326")
+costandalucia1 <- st_transform(costandalucia,
+                               "+init=epsg:4326")
+bati1 <- st_transform(bati,
+                      "+init=epsg:4326")
 ```
 
 # Mapa
