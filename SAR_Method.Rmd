@@ -397,7 +397,19 @@ datos$distancia <- mapply(calcular_distancia,
 
 # La primera fila tendrá NA ya que no hay punto anterior
 datos$distancia[1] <- NA
+head(datos)
 ```
+
+Probar forma que indica Ana Magro, que es calcular tiempo de arrastre X Velocidad. La idea es calcular el tiempo entre registros dado por `fecha_hora`. Y multiplicamos por `N_VELOCIDAD`
+
+```{r}
+datosp <- datos %>% 
+  arrange(fecha_hora) %>% 
+ mutate(diff = fecha_hora - lag(fecha_hora),
+         diff_secs = as.numeric(diff, units = 'secs'))
+```
+
+
 
 5- Diferenciar entre registros de pesca y no pesca basándose en la velocidad y solo dejó los registros `P`
 
@@ -407,7 +419,7 @@ datos
 datosbar <-ggplot(datos, aes(MANIOBRA))+
   geom_bar()
 
-datos1 <- datos %>% 
+datos1 <- datosp %>% 
   filter(MANIOBRA=="P")
 ```
 
@@ -419,9 +431,9 @@ ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las va
 datosfil <- datos1 %>% 
   filter(distancia < 1000) %>% 
   mutate(VELONUE = N_VELOCIDAD*0.51444, # de nudos a mts/seg
-         TIEMPO = (distancia / VELONUE) / 60,
-         AREA = distancia*5,
-         SA=distancia*AREA) # como ejemplo 5 mt de aperttura de draga (corroborar)
+        DISTANCIA2 = diff_secs * VELONUE,
+        SA = DISTANCIA2*5) # como ejemplo 5 mt de aperttura de draga (corroborar)
+        
 ```
 
 Gafico el tiempo y velocidad promedio por barco
@@ -506,6 +518,12 @@ grilla <- st_read(here("SHP_Chirla",
                               "cuadriculas_definitivo.shp"))
 bati <- st_read(here("SHP_Chirla",
                      "batimetria_rediam20x20_10m_id.shp"))
+habitat <- st_read(here("SHP_Chirla",
+                     "Habitats_region_IV.shp"))
+demarca <- st_read("SHP_Chirla",
+                   "Demarcaciones_Marinas_WGS84_2018")
+  
+  
 ```
 ## Transforma data
 ```{r message=FALSE, warning=FALSE}
@@ -515,39 +533,15 @@ costandalucia1 <- st_transform(costandalucia,
                                "+init=epsg:4326")
 bati1 <- st_transform(bati,
                       "+init=epsg:4326")
+
+habi1 <- st_transform(habitat,
+                      "+init=epsg:4326")
+
+dema1 <- st_transform(demarca,
+                      "+init=epsg:4326")
+
 ```
 
-# Mapa
- 
-```{r warning=FALSE}
-mas <- ggplot() +
-  #geom_sf(data = lito1, fill="white", color="blue") +
-  geom_sf(data = grilla1, fill="white", color="red") +
-  geom_sf(data = costandalucia1, fill="#fee8c8") +
-  #geom_sf(data = bati1, fill="white", color="blue") +
-  # geom_sf(data = fisicomar1, alpha=0.1,
-  #         linetype=5) +
-  scale_fill_viridis_d(option="H",
-                       alpha=.5)+
-  coord_sf() +
-  xlab(expression(paste(Longitude^o,~'O'))) +
-  ylab(expression(paste(Latitude^o,~'S')))+
-  # ggrepel::geom_label_repel(
-  #   data = zonapro1,
-  #   aes(label = ZONA, geometry = geometry),
-  #   stat = "sf_coordinates",
-  #   min.segment.length = ,
-  #   colour = "black",
-  #   size = 2,
-  #   segment.colour = "black",
-  #   box.padding = 0.7,
-  #   max.overlaps = 50) +
-  theme_few()+
-  theme(legend.position = "none")+
-  xlim(-7.6,-6)+
-  ylim(36.6, 37.4)
-mas
-```
 
 Ahora identifico la base que quiero plotear
 
@@ -601,6 +595,40 @@ grillasar <- st_join(grilla2, sabd)
 
 names(grilla3)
 ```
+# Mapa
+ 
+```{r warning=FALSE}
+mas <- ggplot() +
+  geom_sf(data = habi1,
+          aes(fill=MSFD_BBHT)) +
+  geom_sf(data = grilla1, fill=NA, 
+          color="red") +
+  geom_sf(data = costandalucia1, fill="#fee8c8") +
+  #geom_sf(data = bati1, fill="white", color="blue") +
+  # geom_sf(data = fisicomar1, alpha=0.1,
+  #         linetype=5) +
+  scale_fill_viridis_d(option="H",
+                       alpha=.5)+
+  coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))+
+  # ggrepel::geom_label_repel(
+  #   data = zonapro1,
+  #   aes(label = ZONA, geometry = geometry),
+  #   stat = "sf_coordinates",
+  #   min.segment.length = ,
+  #   colour = "black",
+  #   size = 2,
+  #   segment.colour = "black",
+  #   box.padding = 0.7,
+  #   max.overlaps = 50) +
+  theme_few()+
+  theme(legend.position = "none")+
+  xlim(-7.6,-6)+
+  ylim(36.6, 37.4)
+mas
+```
+
 repito el mapa con rendimientos
 
 ```{r warning=FALSE}
