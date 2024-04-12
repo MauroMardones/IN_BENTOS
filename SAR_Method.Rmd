@@ -28,8 +28,7 @@ header-includes:
 
 ```{r setup1, echo =FALSE}
 rm(list = ls())
-knitr::opts_chunk$set(echo = FALSE,
-                      message = FALSE,
+knitr::opts_chunk$set(message = FALSE,
                       warning = FALSE,
                       fig.align = 'center',
                       dev = 'jpeg',
@@ -55,6 +54,8 @@ library(gtsummary)
 library(egg)
 library(ggthemes)
 library(geosphere)
+library(sp)
+library(sf)
 ```
 
 
@@ -241,7 +242,8 @@ for (archivo in cajas2009) {
 
 
 ```{r}
-cajas2009uni <- do.call(rbind, lista_datos)
+cajas2009uni <- do.call(rbind, 
+                        lista_datos)
 ```
 Verifico la dimension de la base 
 ```{r}
@@ -250,8 +252,8 @@ dim(cajas2009uni)
 
 calculo la cantidad de embarcaciones presentes en la BD
 
-```{r}
-unique(cajasfilm$MATRICULA)
+```{r echo=TRUE}
+unique(cajas2009uni$MATRICULA)
 ```
 
 cambio el formato de fechas:
@@ -270,23 +272,26 @@ cajassep <- cajas2009uni %>%
 De forma simple compruenbo los meses y dias con actividad de los datos sin filtrar;
 
 
-```{r}
+```{r eval=FALSE}
 
 diahis <- ggplot()+
   geom_histogram(aes(cajassep$DIA), 
                      col=2,
                      fill="white",
-                 binwidth = 1)
+                 binwidth = 1)+
+  theme_few()
 meshis <- ggplot()+
   geom_histogram(aes(cajassep$MES), 
-                     col=2,
+                     col=3,
                      fill="white",
-                 binwidth = 1)
+                 binwidth = 1)+
+  theme_few()
 velhis <- ggplot()+
   geom_histogram(aes(cajassep$N_VELOCIDAD), 
-                     col=2,
+                     col=4,
                      fill="white",
-                 binwidth = 0.1)
+                 binwidth = 0.1)+
+  theme_few()
 ggarrange(diahis, meshis, velhis, ncol=3)
 ```
 
@@ -310,7 +315,10 @@ cajasfil <- cajassep[!duplicated(cajassep,
 ```{r}
 cajasfilp <- cajasfil %>% 
   filter(N_EN_PUERTO == 0)
+```
 
+
+```{r}
 velhis <- ggplot()+
   geom_histogram(aes(cajasfilp$N_VELOCIDAD,
                      fill=cajasfilp$N_VELOCIDAD < 1.5),
@@ -330,7 +338,10 @@ knitr::include_graphics("FIG/umbralveloc.png")
 De esta forma, a cada señal proporcionada por la caja verde se le asignó una actividad: pesca, maniobra o navegada. En la figura 8 se puede ver un histograma que representa el número de registros en función de la velocidad para los registros filtrados, en él se observa cómo han desaparecido los registros en puerto y que existen tres modas correspondientes a las actividades mencionadas, maniobras (M), pesca (P) y navegaciones (N). [@Cohan2012]
 
 Los registros en los cuales la velocidad del buque fue inferior a 1.5 nudos o entre 3.5 y 6 nudos, fueron considerados como maniobras de pesca (actividad "M"), tales como la virada y largada del arte o el reposicionamiento del buque precedente al arrastre.
+
 ```{r}
+head(cajasfil)
+
 cajasfil2 <- cajasfil %>%
   mutate(MANIOBRA = case_when(
     N_VELOCIDAD >= 0 & N_VELOCIDAD < 1.5 ~ "M",
@@ -340,19 +351,13 @@ cajasfil2 <- cajasfil %>%
     TRUE ~ NA_character_  # Por si acaso hay valores fuera de los rangos especificados
   ))
 
+dim(cajasfil2)
 
 ```
 
 
 
-4- Diferenciar entre registros de pesca y no pesca basándose en la velocidad y solo dejó los registros `P`
-
-```{r}
-cajasfilm <- cajasfil2 %>% 
-  filter(MANIOBRA=="P")
-```
-
-5- Ahora calculo las distancias entre puntos. como??
+4- Ahora calculo las distancias entre puntos. como??
 
 ```{r}
 # Función para calcular la distancia entre dos puntos
@@ -376,7 +381,7 @@ calcular_distancia <- function(lat1, lon1, lat2, lon2) {
   return(distancia)
 }
 
-datos <- cajasfilm
+datos <- cajasfil2
 # Convertir la columna de fecha y hora a un objeto POSIXct con lubridate
 datos$fecha_hora <- ymd_hms(paste(datos$FECHA, datos$HORA))
 
@@ -392,30 +397,40 @@ datos$distancia <- mapply(calcular_distancia,
 
 # La primera fila tendrá NA ya que no hay punto anterior
 datos$distancia[1] <- NA
+```
 
+5- Diferenciar entre registros de pesca y no pesca basándose en la velocidad y solo dejó los registros `P`
+
+```{r}
+
+datos
+datosbar <-ggplot(datos, aes(MANIOBRA))+
+  geom_bar()
+
+datos1 <- datos %>% 
+  filter(MANIOBRA=="P")
 ```
 
 
-
-ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las variables de velocidad en metros/seg. y tiempo recorrido por la rastra
+ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las variables de velocidad en metros/seg. y tiempo recorrido por la rastra. filtro por distancia < 1000
 
 
 ```{r}
-datosfil <- datos %>% 
+datosfil <- datos1 %>% 
   filter(distancia < 1000) %>% 
   mutate(VELONUE = N_VELOCIDAD*0.51444, # de nudos a mts/seg
-         TIEMPO = (distancia / VELONUE) / 60)
+         TIEMPO = (distancia / VELONUE) / 60,
+         AREA = distancia*5,
+         SA=distancia*AREA) # como ejemplo 5 mt de aperttura de draga (corroborar)
 ```
 
-
-
-Gafico el tiempo recorrido por barco
-
+Gafico el tiempo y velocidad promedio por barco
 
 ```{r}
 plottiem <- ggplot(datosfil %>% 
                group_by(MATRICULA))+
-  geom_boxplot(aes(x = reorder(MATRICULA, TIEMPO), y = TIEMPO), 
+  geom_boxplot(aes(x = reorder(MATRICULA, TIEMPO), 
+                   y = TIEMPO),
                outliers = FALSE)+
   geom_hline(yintercept = 10, 
              col="red")+
@@ -441,8 +456,42 @@ plotvel <- ggplot(datosfil %>%
   ylab(expression(paste(Velocidad (m/s))))
   
   #facet_wrap(.~MES)
-ggarrange(plottiem, plotvel, ncol = 1)
+
+plotsa <- ggplot(datosfil %>% 
+               group_by(MATRICULA))+
+  geom_boxplot(aes(x = reorder(MATRICULA, SA), 
+                   y = SA),
+               outliers = FALSE)+
+  geom_hline(yintercept = 10, 
+             col="red")+
+  theme_few()+
+  theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5,
+                                     size = 5))+
+  xlab("Matriculas") +
+  ylab(expression(paste(SA (m2))))
+
+ggarrange(plottiem, plotvel, plotsa, ncol =1)
 ```
+Calculo el SAR
+
+De acuerdo a @Church2016, el Cálculo de la Proporción del Área Barrida (Swept Area Ratio, SAR) SA es el área barrida (mts/2), CA es el área de la celda y SAR es la proporción del área barrida (equivalente al número de veces que la celda fue barrida).
+
+donde;
+
+$$
+SAr = \frac{SA}{CA}
+$$
+
+
+donde `SA`sera la distancia recorrida el arrastre y la apertura en metros del draga, es decir;
+
+$$
+SA = Distancia \times Apertura \ Draga
+$$
+
+Ahora se debe proceder a engrillar este dato en las celdas
 
 
 # MAPAS
@@ -508,6 +557,15 @@ rendi2 <- rendi %>%
   mutate(LONG1 = LONG*-1) %>% 
   st_as_sf(coords = c("LONG1", "LAT"),  
                   crs = "+init=epsg:4326") 
+
+
+sabd <- datosfil %>% 
+  st_as_sf(coords = c("N_LONGITUD", "N_LATITUD"),  
+                  crs = "+init=epsg:4326") %>% 
+  mutate(CELDAM2 = rep(857776),
+         length.out = nrow(datosfil),
+         SAR= SA/CELDAM2)
+  
 ```
 
 This grid has the same characteristics as the environmental data grids
@@ -535,24 +593,27 @@ grilla2 <- grilla1 %>%
 # ahora uno
 grilla3 <- st_join(grilla2, rendi2)
 names(grilla3)
+
+
+# ahora genero la base sf para el sar
+grillasar <- st_join(grilla2, sabd)
+
+
+names(grilla3)
 ```
 repito el mapa con rendimientos
 
 ```{r warning=FALSE}
 masrend <- ggplot() +
   #geom_sf(data = lito1, fill="white", color="blue") +
-  #geom_sf(data = grilla1, fill="white", color="red") +
+  geom_sf(data = grilla1, fill="white", color="red") +
   geom_sf(data = costandalucia1, fill="#fee8c8") +
-  geom_sf(data = grilla3 %>% 
-          drop_na(rend), 
-          aes(fill=cut(rend,
-                       breaks = seq(0, 20, by = 2))))+
+  geom_sf(data = grillasar %>% 
+          drop_na(SA), 
+          aes(fill=SA/1000))+
   # geom_sf(data = fisicomar1, alpha=0.1,
   #         linetype=5) +
-  scale_fill_brewer(type = "qual",
-                    #labels = label, # if you must
-                    palette = "BrBG,",
-                    name = "CPUE") +
+  scale_fill_viridis_b(option="F")+
     coord_sf() +
   xlab(expression(paste(Longitude^o,~'O'))) +
   ylab(expression(paste(Latitude^o,~'S')))+
@@ -567,7 +628,6 @@ masrend <- ggplot() +
   #   box.padding = 0.7,
   #   max.overlaps = 50) +
   theme_few()+
-  theme(legend.position = "bottom")+
   xlim(-7.6,-6)+
   ylim(36.6, 37.4)
 
@@ -610,6 +670,39 @@ mascapt <- ggplot() +
   ylim(36.6, 37.4)
 
 mascapt
+```
+
+
+```{r warning=FALSE}
+massar <- ggplot() +
+  #geom_sf(data = lito1, fill="white", color="blue") +
+  geom_sf(data = grilla1, fill="white", color="red") +
+  geom_sf(data = costandalucia1, fill="#fee8c8") +
+  geom_sf(data = grillasar %>% 
+            drop_na(SAR), 
+          aes(fill=SAR))+
+  # geom_sf(data = fisicomar1, alpha=0.1,
+  #         linetype=5) +
+  scale_fill_viridis_b(option="C")+
+    coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))+
+  # ggrepel::geom_label_repel(
+  #   data = zonapro1,
+  #   aes(label = ZONA, geometry = geometry),
+  #   stat = "sf_coordinates",
+  #   min.segment.length = ,
+  #   colour = "black",
+  #   size = 2,
+  #   segment.colour = "black",
+  #   box.padding = 0.7,
+  #   max.overlaps = 50) +
+  theme_few()+
+  theme(legend.position = "bottom")+
+  xlim(-7.6,-6)+
+  ylim(36.6, 37.4)
+
+massar
 ```
 
 \newpage
