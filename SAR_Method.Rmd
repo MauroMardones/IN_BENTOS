@@ -174,7 +174,7 @@ ggarrange(f, i , m , ncol=3)
 ```
 
 
-### Unir bases
+## Unir bases
 
 ```{r}
 names(fauna)
@@ -360,6 +360,8 @@ dim(cajasfil2)
 
 4- Ahora calculo las distancias entre puntos. como??
 
+### Método 1
+
 ```{r}
 # Función para calcular la distancia entre dos puntos
 calcular_distancia <- function(lat1, lon1, lat2, lon2) {
@@ -401,6 +403,7 @@ datos$distancia[1] <- NA
 head(datos)
 ```
 
+### Método 2
 Probar forma que indica Ana Magro, que es calcular tiempo de arrastre X Velocidad. La idea es calcular el tiempo entre registros dado por `fecha_hora`. Y multiplicamos por `N_VELOCIDAD`
 
 ```{r}
