@@ -219,12 +219,12 @@ cajas2009 <- c("Draga_01_2009.txt",
            "Draga_10_2008.txt",
            "Draga_11_2008.txt" ,
            "Draga_12_2008.txt")
-caja1 <- read.table(here("DATOS",
-                         "Cajas verdes chirla",
-                         "Draga_2008_2009",
-                         "Draga_01_2009.txt"), 
-                     sep = ";",
-                    header = TRUE)
+# caja1 <- read.table(here("DATOS",
+#                          "Cajas verdes chirla",
+#                          "Draga_2008_2009",
+#                          "Draga_01_2009.txt"), 
+#                      sep = ";",
+#                     header = TRUE)
 
 # Lista para almacenar los datos
 lista_datos <- list()
@@ -259,7 +259,7 @@ unique(cajas2009uni$MATRICULA)
 cambio el formato de fechas:
 
 ```{r}
-cajas2009uni$FECHA <- ymd(cajas2009uni$FECHA) 
+cajas2009uni$FECHA <- dmy(cajas2009uni$FECHA) 
 
 
 cajassep <- cajas2009uni %>%
