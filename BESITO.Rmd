@@ -60,12 +60,183 @@ library(sf)
 
 
 
-# INTRODUCTION
+# CONTEXTO
+
+# DATA
+
+Existen tres tipos de archivos que contienen los datos de fauna y registros.  Entre ellos, lo comun es la Columna `Estación` . Los archivos son `Datos_estaciones_ACUVEN_3D_IN-BENTO.xlsx`,  `Fauna_danos_all.xlsx` y `Station.xlsx`
+
+El archivo `Station.xlsx` tieme el area asociada
+[@Indicator]
+
+```{r}
+fauna <- read_excel(here("DATOS",
+                         "Fauna_danos_all.xlsx")) %>% 
+  rename("Especie_Final" = "ID_FINAL")
+station <- read_excel(here("DATOS",
+                         "Station.xlsx"))
+rendi <- read_excel(here("DATOS",
+                         "Datos_estaciones_ACUVEN_3D_IN-BENTO.xlsx"),
+                         skip = 3)
+besito <- read_excel(here("DATOS",
+                         "Fauna_Especies.xlsx"),
+                         sheet = "Hoja2") %>% 
+  select(1,2,13) %>% 
+  rename("Especie_Final"="ESP")
+
+```
+## Datos Fauna
+
+```{r eval=FALSE}
+unique(fauna$ID_FINAL)
+names(fauna)
+```
+
+Agrupar por diversas variables 
+
+```{r}
+cantes <- fauna %>% 
+  group_by(Especie_Final) %>%
+  summarize(SUM = sum(`Total Indiv...49`,
+                                     na.rm = TRUE),
+            SUMPES = sum(`Peso total (g)...50`))
+
+indsum <- gEspecie_Finalindsum <- ggplot(cantes %>% 
+                   drop_na(ID_FINAL))+
+  geom_col(aes(x =ID_FINAL, y= SUM, fill=ID_FINAL))+
+  theme_few()+
+  theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5,
+                                     size = 8),
+        legend.position = "none")
+  
+
+pessum <- ggplot(cantes %>% 
+                   drop_na(ID_FINAL))+
+  geom_col(aes(x =ID_FINAL, y= SUMPES, fill=ID_FINAL))+
+  theme_few()+
+  theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5,
+                                     size = 5),
+        legend.position = "none")
+```
 
 
-# METHODOLOGY
+```{r}
+indsum
+```
 
-## DATA SATELITAL VESSEL
+
+```{r}
+pessum
+```
+
+## Datos Lances
+
+```{r message=FALSE}
+setrendi <- rendi %>% 
+  group_by()
+
+den <- ggplot(rendi)+
+  geom_point(aes(Estaciones, dens))+
+  theme_few()
+
+bio <- ggplot(rendi)+
+  geom_col(aes(Estaciones, bio))+
+  theme_few()
+
+ren <- ggplot(rendi)+
+  geom_col(aes(Estaciones, rend))+
+  theme_few()
+
+area <- ggplot(rendi)+
+  geom_point(aes(area, rend))+
+  geom_smooth(aes(area, rend))+
+  theme_few()
+
+ggarrange(den, bio , ren, area, ncol=2)
+```
+Entender las profundidades 
+
+```{r message=FALSE}
+f <- ggplot(rendi)+
+  geom_histogram(aes(depth_f),
+                 binwidth = 1,
+                 fill = "transparent", color = "red")+
+  theme_few()
+i <- ggplot(rendi)+
+  geom_histogram(aes(depth_i),
+                 binwidth = 1,
+                 fill = "transparent", color = "blue")+
+  theme_few()
+m <- ggplot(rendi)+
+  geom_histogram(aes(depth_m),
+                 binwidth = 1,
+                 fill = "transparent", color = "green")+
+  theme_few()
+
+ggarrange(f, i , m , ncol=3)
+```
+
+
+## Unir bases
+
+```{r}
+names(fauna)
+names(station)
+names(rendi)
+names(besito)
+```
+Cambio el nombre estación en `fauna`
+
+```{r echo=TRUE}
+fauna1 <- fauna %>% 
+  rename("Estaciones"="ESTACIÓN") %>% 
+  mutate(Estaciones = as.double(str_replace(Estaciones, 
+                                            "^E0*", ""))) %>% 
+  drop_na(Estaciones)
+```
+
+
+```{r echo=TRUE}
+faunabesito  <- left_join(fauna, besito,
+                   by="Especie_Final")
+```
+
+Vemos el aporte por especie de daños al total
+
+```{r}
+daños <- faunabesito %>% 
+  group_by(Especie_Final) %>% 
+  summarize(DAÑOTOTAL=mean(`N_ DO...41`)) 
+
+danosplot <- ggplot(daños)+ 
+          geom_col(aes(x=reorder(daños$Especie_Final,
+                                 daños$DAÑOTOTAL,
+                                 decreasing = TRUE),
+                           y=daños$DAÑOTOTAL))+
+  theme_few()+
+  theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5,
+                                     size = 10))
+  
+danosplot
+
+```
+
+Especies **Centinela**
+
+```{r}
+indexbes <- faunabesito %>% 
+  filter(BESITO %in% c(4,5))
+unique(indexbes$Especie_Final)
+```
+
+
+## Data Caja Verdes
 
 Por ahora solo trabajaremos con la data entregada por Candelaria Burgos para Chirla, que son los datos del año 2008 y 2009.
 
@@ -105,28 +276,31 @@ for (archivo in cajas2009) {
 
 
 ```{r}
-#Uno y verifico dimension
 cajas2009uni <- do.call(rbind, 
                         lista_datos)
+```
+Verifico la dimension de la base 
+```{r}
 dim(cajas2009uni)
 ```
 
-Identifico la cantidad de embarcaciones presentes en la BD
+calculo la cantidad de embarcaciones presentes en la BD
 
 ```{r echo=TRUE}
 unique(cajas2009uni$MATRICULA)
 ```
 
-
+cambio el formato de fechas:
 
 ```{r}
-#cambio el formato de fechas:
 cajas2009uni$FECHA <- dmy(cajas2009uni$FECHA) 
+
 
 cajassep <- cajas2009uni %>%
   mutate(ANO = year(FECHA),
          MES = month(FECHA),
          DIA = day(FECHA))
+
 ```
 
 De forma simple compruenbo los meses y dias con actividad de los datos sin filtrar;
@@ -193,7 +367,7 @@ velhis
 
 La idea es identificar los registros con tiempo efectivo de arrastre como lo muestra la Figura \ref{fig:esq};
 
-```{r esq, echo=FALSE, out.width = "50%", fig.align='center', fig.cap="\\label{esq}Umbrarl de definiciones para calculo de velocidad de arrantre"}
+```{r esq, echo=FALSE, out.width = "100%", fig.align='center', fig.cap="\\label{esq}Umbrarl de definiciones para calculo de velocidad de arrantre"}
 knitr::include_graphics("FIG/umbralveloc.png")
 ```
 De esta forma, a cada señal proporcionada por la caja verde se le asignó una actividad: pesca, maniobra o navegada. En la figura 8 se puede ver un histograma que representa el número de registros en función de la velocidad para los registros filtrados, en él se observa cómo han desaparecido los registros en puerto y que existen tres modas correspondientes a las actividades mencionadas, maniobras (M), pesca (P) y navegaciones (N). [@Cohan2012]
@@ -278,73 +452,12 @@ datosp <- datos %>%
 5- Diferenciar entre registros de pesca y no pesca basándose en la velocidad y solo dejó los registros `P`
 
 ```{r}
-datos1 <- datos %>% 
+datos1 <- datosp %>% 
   filter(MANIOBRA=="P")
 ```
 
 
 ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las variables de velocidad en metros/seg. y tiempo recorrido por la rastra. filtro por distancia < 1000
-
-
-```{r}
-datosfil <- datos1 %>% 
-  filter(distancia < 1000) %>% 
-  mutate(VELONUE = N_VELOCIDAD*0.51444, # de nudos a mts/seg
-        #DISTANCIA2 = diff_secs * VELONUE,
-        SA = distancia*2.5) # como ejemplo 5 mt de aperttura de draga (corroborar)
-        
-```
-
-Gafico el tiempo y velocidad promedio por barco
-
-```{r}
-plottiem <- ggplot(datosfil %>% 
-               group_by(MATRICULA))+
-  geom_boxplot(aes(x = reorder(MATRICULA, TIEMPO), 
-                   y = TIEMPO),
-               outliers = FALSE)+
-  geom_hline(yintercept = 10, 
-             col="red")+
-  theme_few()+
-  theme(axis.text.x = element_text(angle = 90,
-                                     hjust = 1,
-                                     vjust = 0.5,
-                                     size = 5))+
-  xlab("Matriculas") +
-  ylab(expression(paste(Tiempo (min))))
-
-plotvel <- ggplot(datosfil %>% 
-               group_by(MATRICULA))+
-  geom_boxplot(aes(x = reorder(MATRICULA, VELONUE),
-                   y = VELONUE),
-               outliers = FALSE)+
-  theme_few()+
-  theme(axis.text.x = element_text(angle = 90,
-                                     hjust = 1,
-                                     vjust = 0.5,
-                                     size = 5))+
-  xlab("Matriculas") +
-  ylab(expression(paste(Velocidad (m/s))))
-  
-  #facet_wrap(.~MES)
-
-plotsa <- ggplot(datosfil %>% 
-               group_by(MATRICULA))+
-  geom_boxplot(aes(x = reorder(MATRICULA, SA), 
-                   y = SA),
-               outliers = FALSE)+
-  geom_hline(yintercept = 10, 
-             col="red")+
-  theme_few()+
-  theme(axis.text.x = element_text(angle = 90,
-                                     hjust = 1,
-                                     vjust = 0.5,
-                                     size = 5))+
-  xlab("Matriculas") +
-  ylab(expression(paste(SA (m2))))
-
-ggarrange(plottiem, plotvel, plotsa, ncol =1)
-```
 Calculo el SAR
 
 De acuerdo a @Church2016, el Cálculo de la Proporción del Área Barrida (Swept Area Ratio, SAR) `SA` es el área barrida (mts/2), `CA` es el área de la celda y `SAR` es la proporción del área barrida (equivalente al número de veces que la celda fue barrida).
@@ -361,10 +474,21 @@ donde `SA`sera la distancia recorrida el arrastre y la apertura en metros del dr
 $$
 SA = Distancia \times Apertura \ Draga
 $$
-Quiero calcular el numero de lances por estacion
 
+
+```{r}
+datosfil <- datos1 %>% 
+  filter(distancia < 1000) %>% 
+  mutate(VELONUE = N_VELOCIDAD*0.51444, # de nudos a mts/seg
+        #DISTANCIA2 = diff_secs * VELONUE,
+        SA = distancia*2.5) %>% 
+  mutate(CELDAM2 = rep(857776),length.out = nrow(datosfil),
+         SAR= (SA/CELDAM2)*100)
+
+```
 
 Ahora se debe proceder a engrillar este dato en las celdas
+
 
 
 # MAPAS
@@ -407,20 +531,12 @@ dema1 <- st_transform(demarca,
 Ahora identifico la base que quiero plotear
 
 ```{r ssmu1}
-rendi2 <- rendi %>% 
-  mutate(LONG1 = LONG*-1) %>% # la base tiene long con signo positvo
-  st_as_sf(coords = c("LONG1", "LAT"),  
-                  crs = "+init=epsg:4326") 
-
-
 sabd <- datosfil %>% 
   st_as_sf(coords = c("N_LONGITUD", "N_LATITUD"),  
-                  crs = "+init=epsg:4326") %>% 
-  mutate(CELDAM2 = rep(857776),
-         length.out = nrow(datosfil),
-         SAR= SA/CELDAM2)
+                  crs = "+init=epsg:4326") 
   
 ```
+
 
 This grid has the same characteristics as the environmental data grids
 that will be called up later. This grid is 1x0.5 degrees which allows a
@@ -428,24 +544,6 @@ clear visualization of the processes, whether biological and/or
 environmental.
 
 ```{r gri}
-
-# the first object dsargrillada# the first object drives the output geometry
-grilla2 <- grilla1 %>%
-  rename("Estaciones" = "ID_CELDA") 
-# ahora uno
-grilla3 <- st_join(grilla2, rendi2)
-names(grilla3)
-
-
-# ahora genero la base sf para el sar
-grillasar <- st_join(grilla2, sabd)
-
-
-#cruzo habita
-
-
-
-names(grilla3)
 #Aca dejo este code para hacer una grilla
 # Grid<- suba1aa  %>% #pm481 es el plot base original linea 481
 #   sf::st_make_grid(cellsize = c(1,0.5)) %>% # para que quede cuadrada
@@ -454,121 +552,27 @@ names(grilla3)
 #   dplyr::mutate(cellid = row_number()) 
 # 
 # # Clean the input data by removing duplicate vertices and making the object topologically valid
-sf_objeto_valido <- st_make_valid(habi1)
-
-# Unir las geometrías
-sf_objeto_sin_duplicados <- st_union(sf_objeto_valido)
+# grid3 <- st_make_valid(Grid)
 # 
- # Corto la grilla dentro de las SSMU
+# # Corto la grilla dentro de las SSMU
+# #gridcrop1 <- crop_shape(grid3, suba1aa, polygon = TRUE)
 
-habigilla <- sf_objeto_sin_duplicados %>% 
-  select(c(11,22)) %>% 
-  filter(MSFD_BBHT != "Na") %>% 
-  filter(MSFD_BBHT %in% c("Circalittoral sand",
-                                    "Infralittoral sand" ,
-                                    "Circalittoral coarse sediment",
-                                    "Infralittoral coarse sediment" ,
-                                    "Infralittoral rock and biogenic reef",
-                                    "Circalittoral rock and biogenic reef",
-                                    "Circalittoral mud",
-                                    "Infralittoral mud"))
-uniquehabit <- str_unique(sargrillada$geometry)
+# the first object drives the output geometry
+grilla2 <- grilla1 %>%
+  rename("Estaciones" = "ID_CELDA") 
 
-habicrop <- st_crop(habigrilla, grilla2)
-
-
+# ahora genero la base sf para el sar
+grillasar <- st_join(grilla2, sabd)
 ```
-
-
-Ahora calculo un ID_LANE por operacion
+Y ahora veo como es el ttotal del SAR en % por celda
 
 ```{r}
-# Primero, ordena los datos por matrícula y fecha
-idlance <- grillasar %>%
-  arrange(MATRICULA, FECHA, HORA)
-
-# Luego, calcula la diferencia en segundos entre cada registro y el siguiente
-idlance2 <- idlance %>%
-  mutate(diff_secs_next = lead(diff_secs, default = 0))
-
-# Ahora, crea una nueva columna que sea TRUE si la diferencia en segundos es mayor a 1200 (20 minutos)
-# o si es el último registro de la misma matrícula y fecha
-idlance3 <- idlance2 %>%
-  mutate(ID_Lance = ifelse(diff_secs_next > 1200 | 
-                             lead(MATRICULA) != MATRICULA | 
-                             lead(FECHA) != FECHA, TRUE, FALSE))
-# Convierte la columna ID_Lance a formato numérico y luego asigna un ID incremental
-idlance4 <- idlance3 %>%
-  group_by(MATRICULA) %>% 
-  mutate(ID_Lance = cumsum(ID_Lance))
-
-# Muestra los primeros registros para verificar
-head(idlance4)
+grillasardf <- as.data.frame(grillasar)
+sarest <- grillasardf %>% 
+  group_by(Estaciones) %>% 
+  summarize(TOTALSAR = mean(SAR))
 ```
-
-Solo para visualizar, cambio el objeto a `data.frame`. Pero debo considerar `idlance4` para engrillar.
-
-```{r}
-idlance5 <- as.data.frame(idlance4)
-
-sumest <- idlance5 %>% 
-  group_by(Estaciones,MATRICULA) %>% 
-  summarise(num_lances = n_distinct(ID_Lance, na.rm = TRUE))
-```
-
-
-
-# Mapa
  
-```{r warning=FALSE}
-mas <- ggplot() +
-  geom_sf(data = habi1 %>% 
-            filter(MSFD_BBHT %in% c("Circalittoral sand",
-                                    "Infralittoral sand" ,
-                                    "Circalittoral coarse sediment",
-                                    "Infralittoral coarse sediment" ,
-                                    "Infralittoral rock and biogenic reef",
-                                    "Circalittoral rock and biogenic reef",
-                                    "Circalittoral mud",
-                                    "Infralittoral mud")),
-          aes(fill=MSFD_BBHT)) +
-  geom_sf(data = grilla3, fill=NA, 
-          color="red") +
-  geom_sf(data = costandalucia1, fill="#fee8c8") +
-  #geom_sf(data = bati1, fill="white", color="blue") +
-  # geom_sf(data = fisicomar1, alpha=0.1,
-  #         linetype=5) +
-  scale_fill_viridis_d(option="H",
-                       alpha=.5)+
-  coord_sf() +
-  xlab(expression(paste(Longitude^o,~'O'))) +
-  ylab(expression(paste(Latitude^o,~'S')))+
-  ggrepel::geom_label_repel(
-     data = habi1 %>% 
-            filter(MSFD_BBHT %in% c("Circalittoral sand",
-                                    "Infralittoral sand" ,
-                                    "Circalittoral coarse sediment",
-                                    "Infralittoral coarse sediment" ,
-                                    "Infralittoral rock and biogenic reef",
-                                    "Circalittoral rock and biogenic reef",
-                                    "Circalittoral mud",
-                                    "Infralittoral mud")),
-     aes(label = MSFD_BBHT,
-         geometry = geometry),
-     stat = "sf_coordinates",
-     min.segment.length = ,
-     colour = "black",
-     size = 2,
-     segment.colour = "black",
-     box.padding = 0.7,
-     max.overlaps = 50,
-     max_time = 0.5) +
-  theme_few()+
-  theme(legend.position = "none")+
-  xlim(-7.6,-6)+
-  ylim(36.6, 37.4)
-mas
-```
 
 repito el mapa con rendimientos
 
@@ -578,8 +582,8 @@ masrend <- ggplot() +
   geom_sf(data = grilla1, fill="white", color="red") +
   geom_sf(data = costandalucia1, fill="#fee8c8") +
   geom_sf(data = grillasar %>% 
-          drop_na(SA), 
-          aes(fill=SA/1000))+
+          drop_na(SAR), 
+          aes(fill=SAR))+
   # geom_sf(data = fisicomar1, alpha=0.1,
   #         linetype=5) +
   scale_fill_viridis_b(option="F")+
@@ -602,25 +606,21 @@ masrend <- ggplot() +
 
 masrend
 ```
-repito el mapa con rendimientos
+Ahora trabajaremos los habitats
 
 ```{r warning=FALSE}
-mascapt <- ggplot() +
-  #geom_sf(data = lito1, fill="white", color="blue") +
-  #geom_sf(data = grilla1, fill="white", color="red") +
+mas <- ggplot() +
+  geom_sf(data = habi1,
+          aes(fill=MSFD_BBHT)) +
+  geom_sf(data = grilla3, fill=NA, 
+          color="red") +
   geom_sf(data = costandalucia1, fill="#fee8c8") +
-  geom_sf(data = grilla3 %>%
-            drop_na(`PComercial (kg)`) %>% 
-            filter(`PComercial (kg)`>0.01), 
-          aes(fill=cut(`PComercial (kg)`,
-                       breaks = seq(0, 50, by = 5))))+
+  #geom_sf(data = bati1, fill="white", color="blue") +
   # geom_sf(data = fisicomar1, alpha=0.1,
   #         linetype=5) +
-  scale_fill_brewer(type = "qual",
-                    #labels = label, # if you must
-                    palette = "GnBu",
-                    name = "Capturas") +
-    coord_sf() +
+  scale_fill_viridis_d(option="H",
+                       alpha=.5)+
+  coord_sf() +
   xlab(expression(paste(Longitude^o,~'O'))) +
   ylab(expression(paste(Latitude^o,~'S')))+
   # ggrepel::geom_label_repel(
@@ -634,45 +634,13 @@ mascapt <- ggplot() +
   #   box.padding = 0.7,
   #   max.overlaps = 50) +
   theme_few()+
-  theme(legend.position = "bottom")+
+  theme(legend.position = "none")+
   xlim(-7.6,-6)+
   ylim(36.6, 37.4)
-
-mascapt
+mas
 ```
 
 
-```{r warning=FALSE}
-massar <- ggplot() +
-  #geom_sf(data = lito1, fill="white", color="blue") +
-  geom_sf(data = grilla1, fill="white", color="red") +
-  geom_sf(data = costandalucia1, fill="#fee8c8") +
-  geom_sf(data = grillasar %>% 
-            drop_na(SAR), 
-          aes(fill=SAR))+
-  # geom_sf(data = fisicomar1, alpha=0.1,
-  #         linetype=5) +
-  scale_fill_viridis_b(option="C")+
-    coord_sf() +
-  xlab(expression(paste(Longitude^o,~'O'))) +
-  ylab(expression(paste(Latitude^o,~'S')))+
-  # ggrepel::geom_label_repel(
-  #   data = zonapro1,
-  #   aes(label = ZONA, geometry = geometry),
-  #   stat = "sf_coordinates",
-  #   min.segment.length = ,
-  #   colour = "black",
-  #   size = 2,
-  #   segment.colour = "black",
-  #   box.padding = 0.7,
-  #   max.overlaps = 50) +
-  theme_few()+
-  theme(legend.position = "bottom")+
-  xlim(-7.6,-6)+
-  ylim(36.6, 37.4)
-
-massar
-```
 
 \newpage
 
