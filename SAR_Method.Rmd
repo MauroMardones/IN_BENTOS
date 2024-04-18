@@ -30,6 +30,7 @@ header-includes:
 rm(list = ls())
 knitr::opts_chunk$set(message = FALSE,
                       warning = FALSE,
+                      echo=FALSE,
                       fig.align = 'center',
                       dev = 'jpeg',
                       dpi = 300, 
@@ -111,6 +112,8 @@ cajas2009uni <- do.call(rbind,
 dim(cajas2009uni)
 ```
 
+
+## RESULTS 
 Identifico la cantidad de embarcaciones presentes en la BD
 
 ```{r echo=TRUE}
@@ -224,7 +227,7 @@ dim(cajasfil2)
 
 ```{r}
 # Función para calcular la distancia entre dos puntos
-calcular_distancia <- function(lat1, lon1, lat2, lon2) {
+calcular_DISTANCIA <- function(lat1, lon1, lat2, lon2) {
   # Convertir grados a radianes
   lat1_rad <- lat1 * pi / 180
   lon1_rad <- lon1 * pi / 180
@@ -234,14 +237,14 @@ calcular_distancia <- function(lat1, lon1, lat2, lon2) {
   # Radio de la Tierra en metros
   radio_tierra <- 6371000
   
-  # Calcular la distancia utilizando la fórmula del haversine
+  # Calcular la DISTANCIA utilizando la fórmula del haversine
   dlat <- lat2_rad - lat1_rad
   dlon <- lon2_rad - lon1_rad
   a <- sin(dlat / 2)^2 + cos(lat1_rad) * cos(lat2_rad) * sin(dlon / 2)^2
   c <- 2 * atan2(sqrt(a), sqrt(1 - a))
-  distancia <- radio_tierra * c
+  DISTANCIA <- radio_tierra * c
   
-  return(distancia)
+  return(DISTANCIA)
 }
 
 datos <- cajasfil2
@@ -251,19 +254,20 @@ datos$fecha_hora <- ymd_hms(paste(datos$FECHA, datos$HORA))
 # Ordenar el dataframe por fecha y hora
 datos <- datos %>% 
   arrange(fecha_hora)
-# Calcular la distancia para cada fila del dataframe
-datos$distancia <- mapply(calcular_distancia,
+# Calcular la DISTANCIA para cada fila del dataframe
+datos$DISTANCIA <- mapply(calcular_DISTANCIA,
                           datos$N_LATITUD,
                           datos$N_LONGITUD,
                           lag(datos$N_LATITUD),
                           lag(datos$N_LONGITUD))
 
 # La primera fila tendrá NA ya que no hay punto anterior
-datos$distancia[1] <- NA
+datos$DISTANCIA[1] <- NA
 head(datos)
 ```
 
 ### Método 2
+
 Probar forma que indica Ana Magro, que es calcular tiempo de arrastre X Velocidad. La idea es calcular el tiempo entre registros dado por `fecha_hora`. Y multiplicamos por `N_VELOCIDAD`
 
 ```{r}
@@ -278,41 +282,24 @@ datosp <- datos %>%
 5- Diferenciar entre registros de pesca y no pesca basándose en la velocidad y solo dejó los registros `P`
 
 ```{r}
-datos1 <- datos %>% 
+datos1 <- datosp %>% 
   filter(MANIOBRA=="P")
 ```
 
-
-ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las variables de velocidad en metros/seg. y tiempo recorrido por la rastra. filtro por distancia < 1000
-
+ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las variables de velocidad en metros/seg. y tiempo recorrido por la rastra. 
 
 ```{r}
 datosfil <- datos1 %>% 
-  filter(distancia < 1000) %>% 
+  filter(DISTANCIA < 5000) %>% 
   mutate(VELONUE = N_VELOCIDAD*0.51444, # de nudos a mts/seg
-        #DISTANCIA2 = diff_secs * VELONUE,
-        SA = distancia*2.5) # como ejemplo 5 mt de aperttura de draga (corroborar)
+        DISTANCIA2 = diff_secs * VELONUE, # por ahora no ocuparé el Metodo 2
+        SA = DISTANCIA*2.5) # cDato de anchura draga chirla MD y LS
         
 ```
 
-Gafico el tiempo y velocidad promedio por barco
+Gafico velocidad y SA promedio por barco
 
 ```{r}
-plottiem <- ggplot(datosfil %>% 
-               group_by(MATRICULA))+
-  geom_boxplot(aes(x = reorder(MATRICULA, TIEMPO), 
-                   y = TIEMPO),
-               outliers = FALSE)+
-  geom_hline(yintercept = 10, 
-             col="red")+
-  theme_few()+
-  theme(axis.text.x = element_text(angle = 90,
-                                     hjust = 1,
-                                     vjust = 0.5,
-                                     size = 5))+
-  xlab("Matriculas") +
-  ylab(expression(paste(Tiempo (min))))
-
 plotvel <- ggplot(datosfil %>% 
                group_by(MATRICULA))+
   geom_boxplot(aes(x = reorder(MATRICULA, VELONUE),
@@ -328,26 +315,25 @@ plotvel <- ggplot(datosfil %>%
   
   #facet_wrap(.~MES)
 
-plotsa <- ggplot(datosfil %>% 
+plotdi <- ggplot(datosfil %>% 
                group_by(MATRICULA))+
-  geom_boxplot(aes(x = reorder(MATRICULA, SA), 
-                   y = SA),
+  geom_boxplot(aes(x = reorder(MATRICULA, DISTANCIA), 
+                   y = DISTANCIA),
                outliers = FALSE)+
-  geom_hline(yintercept = 10, 
-             col="red")+
   theme_few()+
   theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
                                      vjust = 0.5,
                                      size = 5))+
   xlab("Matriculas") +
-  ylab(expression(paste(SA (m2))))
+  ylab(expression(paste(Distancia (m))))
 
-ggarrange(plottiem, plotvel, plotsa, ncol =1)
+ggarrange(plotvel, plotdi, 
+          ncol =1)
 ```
 Calculo el SAR
 
-De acuerdo a @Church2016, el Cálculo de la Proporción del Área Barrida (Swept Area Ratio, SAR) `SA` es el área barrida (mts/2), `CA` es el área de la celda y `SAR` es la proporción del área barrida (equivalente al número de veces que la celda fue barrida).
+De acuerdo a @Church2016, el cálculo de la Razón del Área Barrida (Swept Area Ratio, SAR) `SA` es el área barrida (mts/2), `CA` es el área de la celda y `SAR` es la proporción del área barrida (equivalente al número de veces que la celda fue barrida).
 
 donde;
 
@@ -355,19 +341,13 @@ $$
 SAr = \frac{SA}{CA}
 $$
 
-
 donde `SA`sera la distancia recorrida el arrastre y la apertura en metros del draga, es decir;
 
 $$
 SA = Distancia \times Apertura \ Draga
 $$
-Quiero calcular el numero de lances por estacion
+Pero primero, debemos engrillar la data y luego calcular por cada celda
 
-
-Ahora se debe proceder a engrillar este dato en las celdas
-
-
-# MAPAS
 
 Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Estos datos vectoriales fueron obtenidos desde la paina oficial de datos espaciales de la Junta de Andalucia [Shapesfile](https://portalrediam.cica.es/descargas?path=%2F08_AMBITOS_INTERES_AMBIENTAL%2F02_LITORAL_MARINO%2F04_SOCIOECONOMIA%2FZonasProduccionMoluscos)
 
@@ -383,11 +363,8 @@ habitat <- st_read(here("SHP_Chirla",
                      "Habitats_region_IV.shp"))
 demarca <- st_read("SHP_Chirla",
                    "Demarcaciones_Marinas_WGS84_2018")
-  
-  
-```
-## Transforma data
-```{r message=FALSE, warning=FALSE}
+
+# Transformo a objetos sf con la crs correcta
 grilla1 <- st_transform(grilla, 
                         "+init=epsg:4326")
 costandalucia1 <- st_transform(costandalucia,
@@ -404,22 +381,15 @@ dema1 <- st_transform(demarca,
 ```
 
 
-Ahora identifico la base que quiero plotear
+Ahora identifico la base que quiero plotear y hago el calculo de `SAR`
 
 ```{r ssmu1}
-rendi2 <- rendi %>% 
-  mutate(LONG1 = LONG*-1) %>% # la base tiene long con signo positvo
-  st_as_sf(coords = c("LONG1", "LAT"),  
-                  crs = "+init=epsg:4326") 
-
-
 sabd <- datosfil %>% 
   st_as_sf(coords = c("N_LONGITUD", "N_LATITUD"),  
                   crs = "+init=epsg:4326") %>% 
-  mutate(CELDAM2 = rep(857776),
+  mutate(CELDAM2 = rep(857476),
          length.out = nrow(datosfil),
-         SAR= SA/CELDAM2)
-  
+         SAR= (SA/CELDAM2)*100)
 ```
 
 This grid has the same characteristics as the environmental data grids
@@ -428,40 +398,67 @@ clear visualization of the processes, whether biological and/or
 environmental.
 
 ```{r gri}
-
 # the first object dsargrillada# the first object drives the output geometry
 grilla2 <- grilla1 %>%
   rename("Estaciones" = "ID_CELDA") 
-# ahora uno
-grilla3 <- st_join(grilla2, rendi2)
-names(grilla3)
-
-
 # ahora genero la base sf para el sar
 grillasar <- st_join(grilla2, sabd)
+```
 
 
-#cruzo habita
+Y ahora veo como es el ttotal del SAR en % por celda
 
+```{r}
+grillasardf <- as.data.frame(grillasar)
+sarest <- grillasardf %>% 
+  group_by(Estaciones) %>% 
+  summarize(TOTALSAR = mean(SAR))
+```
+ploteo SAR
 
+```{r warning=FALSE}
+masrend <- ggplot() +
+  #geom_sf(data = lito1, fill="white", color="blue") +
+  geom_sf(data = grilla2, fill=NA, color="red") +
+  geom_sf(data = costandalucia1, fill="#fee8c8") +
+  geom_sf(data = grillasar %>% 
+            filter(SAR<1) %>% 
+            drop_na(SAR), 
+          aes(fill=cut(SAR,
+                       breaks = seq(0, 1, by = 0.1))))+
+  # geom_sf(data = fisicomar1, alpha=0.1,
+  #         linetype=5) +
+  scale_fill_brewer(type = "qual",
+                    #labels = label, # if you must
+                    palette = "Oranges",
+                    name = "SAR") +
+    coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))+
+  # ggrepel::geom_label_repel(
+  #   data = zonapro1,
+  #   aes(label = ZONA, geometry = geometry),
+  #   stat = "sf_coordinates",
+  #   min.segment.length = ,
+  #   colour = "black",
+  #   size = 2,
+  #   segment.colour = "black",
+  #   box.padding = 0.7,
+  #   max.overlaps = 50) +
+  theme_few()+
+  xlim(-7.6,-6.2)+
+  ylim(36.6, 37.3)
+masrend
+```
 
-names(grilla3)
-#Aca dejo este code para hacer una grilla
-# Grid<- suba1aa  %>% #pm481 es el plot base original linea 481
-#   sf::st_make_grid(cellsize = c(1,0.5)) %>% # para que quede cuadrada
-#   sf::st_cast("MULTIPOLYGON") %>%
-#   sf::st_sf()  %>%  # objeto en spatial feature
-#   dplyr::mutate(cellid = row_number()) 
-# 
+Ahora trato de engrillar los habitat
+```{r}
 # # Clean the input data by removing duplicate vertices and making the object topologically valid
 sf_objeto_valido <- st_make_valid(habi1)
-
-# Unir las geometrías
-sf_objeto_sin_duplicados <- st_union(sf_objeto_valido)
 # 
  # Corto la grilla dentro de las SSMU
 
-habigilla <- sf_objeto_sin_duplicados %>% 
+habigilla <- sf_objeto_valido %>% 
   select(c(11,22)) %>% 
   filter(MSFD_BBHT != "Na") %>% 
   filter(MSFD_BBHT %in% c("Circalittoral sand",
@@ -472,15 +469,73 @@ habigilla <- sf_objeto_sin_duplicados %>%
                                     "Circalittoral rock and biogenic reef",
                                     "Circalittoral mud",
                                     "Infralittoral mud"))
-uniquehabit <- str_unique(sargrillada$geometry)
 
-habicrop <- st_crop(habigrilla, grilla2)
+
+habi3 <- st_join(grilla2, habigilla)
 
 
 ```
+Priebo el mapa
 
+```{r warning=FALSE}
+mas <- ggplot() +
+  geom_sf(data = habi1 %>% 
+            filter(MSFD_BBHT %in% c("Circalittoral sand",
+                                    "Infralittoral sand" ,
+                                    "Circalittoral coarse sediment",
+                                    "Infralittoral coarse sediment" ,
+                                    "Infralittoral rock and biogenic reef",
+                                    "Circalittoral rock and biogenic reef",
+                                    "Circalittoral mud",
+                                    "Infralittoral mud")),
+          aes(fill=MSFD_BBHT)) +
+  geom_sf(data = habi3 %>% 
+            drop_na(MSFD_BBHT),
+          aes(fill=MSFD_BBHT)) +
+  geom_sf(data = costandalucia1, fill="#fee8c8") +
+  #geom_sf(data = bati1, fill="white", color="blue") +
+  # geom_sf(data = fisicomar1, alpha=0.1,
+  #         linetype=5) +
+  scale_fill_viridis_d(option="A")+
+  coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))+
+  # ggrepel::geom_label_repel(
+  #    data = habi3 %>% 
+  #           filter(MSFD_BBHT %in% c("Circalittoral sand",
+  #                                   "Infralittoral sand" ,
+  #                                   "Circalittoral coarse sediment",
+  #                                   "Infralittoral coarse sediment" ,
+  #                                   "Infralittoral rock and biogenic reef",
+  #                                   "Circalittoral rock and biogenic reef",
+  #                                   "Circalittoral mud",
+  #                                   "Infralittoral mud")),
+  #    aes(label = MSFD_BBHT,
+  #        geometry = geometry),
+  #    stat = "sf_coordinates",
+  #    min.segment.length = ,
+  #    colour = "black",
+  #    size = 2,
+  #    segment.colour = "black",
+  #    box.padding = 0.7,
+  #    max.overlaps = 50,
+  #    max_time = 0.5) +
+  theme_few()+
+  #theme(legend.position = "none")+
+  xlim(-7.6,-6)+
+  ylim(36.6, 37.4)
+mas
+```
+Cuento cuantas estaciones hay por habitat.
+```{r}
+estahib <- habi3 %>% 
+  group_by(habi3$MSFD_BBHT) %>% 
+  summarise(NESTAC = n())
+```
 
-Ahora calculo un ID_LANE por operacion
+## Calculo de lances por estacion o por habitat 
+
+Pero para esto, primer debemos asignar un ID para cada operación.
 
 ```{r}
 # Primero, ordena los datos por matrícula y fecha
@@ -517,162 +572,9 @@ sumest <- idlance5 %>%
 ```
 
 
+# DISCUSSION
 
-# Mapa
- 
-```{r warning=FALSE}
-mas <- ggplot() +
-  geom_sf(data = habi1 %>% 
-            filter(MSFD_BBHT %in% c("Circalittoral sand",
-                                    "Infralittoral sand" ,
-                                    "Circalittoral coarse sediment",
-                                    "Infralittoral coarse sediment" ,
-                                    "Infralittoral rock and biogenic reef",
-                                    "Circalittoral rock and biogenic reef",
-                                    "Circalittoral mud",
-                                    "Infralittoral mud")),
-          aes(fill=MSFD_BBHT)) +
-  geom_sf(data = grilla3, fill=NA, 
-          color="red") +
-  geom_sf(data = costandalucia1, fill="#fee8c8") +
-  #geom_sf(data = bati1, fill="white", color="blue") +
-  # geom_sf(data = fisicomar1, alpha=0.1,
-  #         linetype=5) +
-  scale_fill_viridis_d(option="H",
-                       alpha=.5)+
-  coord_sf() +
-  xlab(expression(paste(Longitude^o,~'O'))) +
-  ylab(expression(paste(Latitude^o,~'S')))+
-  ggrepel::geom_label_repel(
-     data = habi1 %>% 
-            filter(MSFD_BBHT %in% c("Circalittoral sand",
-                                    "Infralittoral sand" ,
-                                    "Circalittoral coarse sediment",
-                                    "Infralittoral coarse sediment" ,
-                                    "Infralittoral rock and biogenic reef",
-                                    "Circalittoral rock and biogenic reef",
-                                    "Circalittoral mud",
-                                    "Infralittoral mud")),
-     aes(label = MSFD_BBHT,
-         geometry = geometry),
-     stat = "sf_coordinates",
-     min.segment.length = ,
-     colour = "black",
-     size = 2,
-     segment.colour = "black",
-     box.padding = 0.7,
-     max.overlaps = 50,
-     max_time = 0.5) +
-  theme_few()+
-  theme(legend.position = "none")+
-  xlim(-7.6,-6)+
-  ylim(36.6, 37.4)
-mas
-```
-
-repito el mapa con rendimientos
-
-```{r warning=FALSE}
-masrend <- ggplot() +
-  #geom_sf(data = lito1, fill="white", color="blue") +
-  geom_sf(data = grilla1, fill="white", color="red") +
-  geom_sf(data = costandalucia1, fill="#fee8c8") +
-  geom_sf(data = grillasar %>% 
-          drop_na(SA), 
-          aes(fill=SA/1000))+
-  # geom_sf(data = fisicomar1, alpha=0.1,
-  #         linetype=5) +
-  scale_fill_viridis_b(option="F")+
-    coord_sf() +
-  xlab(expression(paste(Longitude^o,~'O'))) +
-  ylab(expression(paste(Latitude^o,~'S')))+
-  # ggrepel::geom_label_repel(
-  #   data = zonapro1,
-  #   aes(label = ZONA, geometry = geometry),
-  #   stat = "sf_coordinates",
-  #   min.segment.length = ,
-  #   colour = "black",
-  #   size = 2,
-  #   segment.colour = "black",
-  #   box.padding = 0.7,
-  #   max.overlaps = 50) +
-  theme_few()+
-  xlim(-7.6,-6.2)+
-  ylim(36.6, 37.3)
-
-masrend
-```
-repito el mapa con rendimientos
-
-```{r warning=FALSE}
-mascapt <- ggplot() +
-  #geom_sf(data = lito1, fill="white", color="blue") +
-  #geom_sf(data = grilla1, fill="white", color="red") +
-  geom_sf(data = costandalucia1, fill="#fee8c8") +
-  geom_sf(data = grilla3 %>%
-            drop_na(`PComercial (kg)`) %>% 
-            filter(`PComercial (kg)`>0.01), 
-          aes(fill=cut(`PComercial (kg)`,
-                       breaks = seq(0, 50, by = 5))))+
-  # geom_sf(data = fisicomar1, alpha=0.1,
-  #         linetype=5) +
-  scale_fill_brewer(type = "qual",
-                    #labels = label, # if you must
-                    palette = "GnBu",
-                    name = "Capturas") +
-    coord_sf() +
-  xlab(expression(paste(Longitude^o,~'O'))) +
-  ylab(expression(paste(Latitude^o,~'S')))+
-  # ggrepel::geom_label_repel(
-  #   data = zonapro1,
-  #   aes(label = ZONA, geometry = geometry),
-  #   stat = "sf_coordinates",
-  #   min.segment.length = ,
-  #   colour = "black",
-  #   size = 2,
-  #   segment.colour = "black",
-  #   box.padding = 0.7,
-  #   max.overlaps = 50) +
-  theme_few()+
-  theme(legend.position = "bottom")+
-  xlim(-7.6,-6)+
-  ylim(36.6, 37.4)
-
-mascapt
-```
-
-
-```{r warning=FALSE}
-massar <- ggplot() +
-  #geom_sf(data = lito1, fill="white", color="blue") +
-  geom_sf(data = grilla1, fill="white", color="red") +
-  geom_sf(data = costandalucia1, fill="#fee8c8") +
-  geom_sf(data = grillasar %>% 
-            drop_na(SAR), 
-          aes(fill=SAR))+
-  # geom_sf(data = fisicomar1, alpha=0.1,
-  #         linetype=5) +
-  scale_fill_viridis_b(option="C")+
-    coord_sf() +
-  xlab(expression(paste(Longitude^o,~'O'))) +
-  ylab(expression(paste(Latitude^o,~'S')))+
-  # ggrepel::geom_label_repel(
-  #   data = zonapro1,
-  #   aes(label = ZONA, geometry = geometry),
-  #   stat = "sf_coordinates",
-  #   min.segment.length = ,
-  #   colour = "black",
-  #   size = 2,
-  #   segment.colour = "black",
-  #   box.padding = 0.7,
-  #   max.overlaps = 50) +
-  theme_few()+
-  theme(legend.position = "bottom")+
-  xlim(-7.6,-6)+
-  ylim(36.6, 37.4)
-
-massar
-```
+# CONCLUSION
 
 \newpage
 
