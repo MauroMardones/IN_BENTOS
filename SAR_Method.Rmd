@@ -59,7 +59,9 @@ library(sp)
 library(sf)
 ```
 
+# ABSTRACT
 
+This abstract presents a method to calculate the SAR (Swept Area Ratio) using satellite data from a fleet of nearly 100 vessels in the artisanal fishing of Chirla in the Gulf of Cadiz. Artisanal fisheries, like Chirla fishing, often lack comprehensive data, hampering effective management. Leveraging satellite imagery, particularly through green boxes technology, offers a unique advantage by providing real-time spatial information on fishing activity. With this method, we can continuously identify the fleet's effort in both spatial and temporal terms. The objective is to develop an ad hoc approach reproducible through accessible codes and open data, facilitating sustainable fisheries management in the Gulf of Cadiz and beyond.
 
 # INTRODUCTION
 
