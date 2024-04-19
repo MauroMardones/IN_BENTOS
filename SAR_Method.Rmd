@@ -66,6 +66,7 @@ This abstract presents a method to calculate the SAR (Swept Area Ratio) using sa
 # INTRODUCTION
 
 
+
 # METHODOLOGY
 
 ## DATA SATELITAL VESSEL
@@ -111,7 +112,7 @@ for (archivo in cajas2009) {
 #Uno y verifico dimension
 cajas2009uni <- do.call(rbind, 
                         lista_datos)
-dim(cajas2009uni)
+head(cajas2009uni)
 ```
 
 
@@ -421,8 +422,11 @@ ploteo SAR
 ```{r warning=FALSE}
 masrend <- ggplot() +
   #geom_sf(data = lito1, fill="white", color="blue") +
-  geom_sf(data = grilla2, fill=NA, color="red") +
-  geom_sf(data = costandalucia1, fill="#fee8c8") +
+  geom_sf(data = grilla2, 
+          fill=NA, 
+          color="red") +
+  geom_sf(data = costandalucia1, 
+          fill="#fee8c8") +
   geom_sf(data = grillasar %>% 
             filter(SAR<1) %>% 
             drop_na(SAR), 
