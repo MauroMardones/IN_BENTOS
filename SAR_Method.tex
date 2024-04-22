@@ -135,20 +135,6 @@
 \rfoot[]{\thepage}
 \fontsize{12}{22}
 \selectfont
-\usepackage{booktabs}
-\usepackage{longtable}
-\usepackage{array}
-\usepackage{multirow}
-\usepackage{wrapfig}
-\usepackage{float}
-\usepackage{colortbl}
-\usepackage{pdflscape}
-\usepackage{tabu}
-\usepackage{threeparttable}
-\usepackage{threeparttablex}
-\usepackage[normalem]{ulem}
-\usepackage{makecell}
-\usepackage{xcolor}
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
 \fi
@@ -216,8 +202,15 @@ Abril, 2024
 }
 \newpage
 
+\hypertarget{abstract}{%
+\section{ABSTRACT}\label{abstract}}
+
+This abstract presents a method to calculate the SAR (Swept Area Ratio) using satellite data from a fleet of nearly 100 vessels in the artisanal fishing of Chirla in the Gulf of Cadiz. Artisanal fisheries, like Chirla fishing, often lack comprehensive data, hampering effective management. Leveraging satellite imagery, particularly through green boxes technology, offers a unique advantage by providing real-time spatial information on fishing activity. With this method, we can continuously identify the fleet's effort in both spatial and temporal terms. The objective is to develop an ad hoc approach reproducible through accessible codes and open data, facilitating sustainable fisheries management in the Gulf of Cadiz and beyond.
+
 \hypertarget{introduction}{%
 \section{INTRODUCTION}\label{introduction}}
+
+Making better use of tracking data can reveal the spatiotemporal and intraspecific variability of species distributions
 
 \hypertarget{methodology}{%
 \section{METHODOLOGY}\label{methodology}}
@@ -226,10 +219,6 @@ Abril, 2024
 \subsection{DATA SATELITAL VESSEL}\label{data-satelital-vessel}}
 
 Por ahora solo trabajaremos con la data entregada por Candelaria Burgos para Chirla, que son los datos del año 2008 y 2009.
-
-\begin{verbatim}
-## [1] 1554983      21
-\end{verbatim}
 
 \hypertarget{results}{%
 \subsection{RESULTS}\label{results}}
@@ -242,28 +231,6 @@ Identifico la cantidad de embarcaciones presentes en la BD
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-##  [1] "SE-1-768"   "HU-2-2158"  "HU-2-1931"  "SE-1-792"   "HU-3-1512" 
-##  [6] "HU-2-2207"  "HU-3-5-91"  "AL-2-1833"  "HU-2-1-95"  "SE-1-1-95" 
-## [11] "HU-2-3-95"  "HU-2-2-95"  "HU-1-5-96"  "HU-2-7-97"  "HU-2-1-97" 
-## [16] "HU-2-5-96"  "HU-2-3-96"  "HU-2-3-98"  "HU-3-11-98" "HU-2-4-98" 
-## [21] "HU-2-3-97"  "SE-1-4-98"  "HU-3-3-99"  "HU-2-8-98"  "HU-3-2-99" 
-## [26] "HU-2-3-99"  "HU-2-8-99"  "HU-2-9-99"  "HU-2-13-99" "HU-2-14-99"
-## [31] "HU-2-8-00"  "HU-3-8-00"  "HU-3-10-00" "HU-3-1-01"  "HU-2-5-01" 
-## [36] "HU-2-9-01"  "HU-3-4-01"  "HU-3-13-00" "HU-2-17-01" "SE-1-8-01" 
-## [41] "HU-2-7-01"  "HU-3-1-02"  "HU-2-28-01" "HU-2-7-02"  "HU-2-8-02" 
-## [46] "HU-2-16-02" "HU-2-17-02" "HU-3-9-02"  "HU-3-14-02" "HU-3-6-02" 
-## [51] "HU-3-4-02"  "SE-1-10-03" "HU-3-12-02" "HU-2-14-03" "HU-3-11-02"
-## [56] "HU-2-27-03" "HU-2-29-03" "HU-2-5-04"  "HU-3-1-04"  "HU-2-9-04" 
-## [61] "HU-1-3-04"  "HU-3-8-04"  "HU-1-4-05"  "HU-2-13-05" "HU-3-2-04" 
-## [66] "HU-3-7-05"  "HU-3-2-05"  "HU-3-4-05"  "HU-3-9-05"  "HU-3-8-05" 
-## [71] "HU-3-6-04"  "HU-3-1-06"  "HU-2-4-06"  "HU-3-5-05"  "HU-3-5-06" 
-## [76] "HU-2-2-07"  "HU-3-1164"  "HU-2-8-97"  "HU-2-11-99" "HU-2-19-01"
-## [81] "SE-1-14-04" "HU-2-1-06"  "HU-2-2-06"  "SE-1-15-03" "HU-3-5-02" 
-## [86] "HU-2-15-01" "HU-2-13-02" "HU-3-16-02" "HU-2-1218"  "HU-2-12-02"
-## [91] "SE-1-14-03" "HU-3-10-04" "HU-2-8-01"
-\end{verbatim}
-
 De forma simple compruenbo los meses y dias con actividad de los datos sin filtrar;
 
 Los métodos para la estimación y cartografiado del esfuerzo pesquero a partir de los datos de los VMS ya se han estudiado en varias pesquerías anteriormente. Estos estudios recomiendan un proceso en varios pasos según (\protect\hyperlink{ref-Cojan2012}{\textbf{Cojan2012?}}):
@@ -272,102 +239,57 @@ Los métodos para la estimación y cartografiado del esfuerzo pesquero a partir 
 
 2- Borrar los registros en puertos.
 
-\begin{center}\includegraphics{SAR_Method_files/figure-latex/unnamed-chunk-8-1} \end{center}
-
 3- Calcular el intervalo de tiempo entre registros sucesivos,
 
 La idea es identificar los registros con tiempo efectivo de arrastre como lo muestra la Figura \ref{fig:esq};
-
-\begin{figure}
-
-{\centering \includegraphics[width=0.5\linewidth]{FIG/umbralveloc} 
-
-}
-
-\caption{\label{esq}Umbrarl de definiciones para calculo de velocidad de arrantre}\label{fig:esq}
-\end{figure}
 
 De esta forma, a cada señal proporcionada por la caja verde se le asignó una actividad: pesca, maniobra o navegada. En la figura 8 se puede ver un histograma que representa el número de registros en función de la velocidad para los registros filtrados, en él se observa cómo han desaparecido los registros en puerto y que existen tres modas correspondientes a las actividades mencionadas, maniobras (M), pesca (P) y navegaciones (N). (\protect\hyperlink{ref-Cohan2012}{Cojan, 2012})
 
 Los registros en los cuales la velocidad del buque fue inferior a 1.5 nudos o entre 3.5 y 6 nudos, fueron considerados como maniobras de pesca (actividad ``M''), tales como la virada y largada del arte o el reposicionamiento del buque precedente al arrastre.
 
-\begin{verbatim}
-##                     FK_ERES      FECHA DIA     HORA FK_BUQUE MATRICULA   PUERTO
-## Draga_01_2009.txt.1     601 2009-01-29  29 13:31:17     9883  SE-1-768 SANLUCAR
-## Draga_01_2009.txt.2     601 2009-01-29  29 13:39:15     9883  SE-1-768 SANLUCAR
-## Draga_01_2009.txt.3     601 2009-01-29  29 13:42:13     9883  SE-1-768 SANLUCAR
-## Draga_01_2009.txt.4     601 2009-01-29  29 13:51:13     9883  SE-1-768 SANLUCAR
-## Draga_01_2009.txt.5     601 2009-01-30  30 11:01:20     9883  SE-1-768 SANLUCAR
-## Draga_01_2009.txt.6     601 2009-01-30  30 12:22:22     9883  SE-1-768 SANLUCAR
-##                     FK_TIPO_F F_LOCALIZA N_LONGITUD N_LATITUD      N_X     N_Y
-## Draga_01_2009.txt.1         3  29-JAN-09  -6.338148  36.80516 202279.3 4078662
-## Draga_01_2009.txt.2         3  29-JAN-09  -6.338153  36.80516 202278.8 4078661
-## Draga_01_2009.txt.3         3  29-JAN-09  -6.338127  36.80516 202281.2 4078662
-## Draga_01_2009.txt.4         3  29-JAN-09  -6.338148  36.80515 202279.2 4078661
-## Draga_01_2009.txt.5         3  30-JAN-09  -6.451208  36.87560 192471.5 4086838
-## Draga_01_2009.txt.6         3  30-JAN-09  -6.360342  36.79270 200249.9 4077348
-##                     N_VELOCIDAD N_RUMBO N_SATELITES N_EN_PUERTO L_BACKUP
-## Draga_01_2009.txt.1     0.10799  22.100           5           0        0
-## Draga_01_2009.txt.2     0.11879  66.224           7           1        0
-## Draga_01_2009.txt.3     0.14039  87.848           8           1        0
-## Draga_01_2009.txt.4     0.10799 114.800           8           1        0
-## Draga_01_2009.txt.5     1.83423  12.982           9           0        0
-## Draga_01_2009.txt.6     0.76350 260.670           7           0        0
-##                     FK_ACTIVI FK_ESTADO FK_MODAL  ANO MES
-## Draga_01_2009.txt.1         3         5        0 2009   1
-## Draga_01_2009.txt.2         1         5        0 2009   1
-## Draga_01_2009.txt.3         1         5        0 2009   1
-## Draga_01_2009.txt.4         1         5        0 2009   1
-## Draga_01_2009.txt.5         4         3        3 2009   1
-## Draga_01_2009.txt.6         3         3        0 2009   1
-\end{verbatim}
-
-\begin{verbatim}
-## [1] 1468527      24
-\end{verbatim}
-
 4- Ahora calculo las distancias entre puntos. como??
+
+\newpage
 
 \hypertarget{muxe9todo-1}{%
 \subsubsection{Método 1}\label{muxe9todo-1}}
 
-\begin{verbatim}
-##                        FK_ERES      FECHA DIA     HORA FK_BUQUE  MATRICULA
-## Draga_05_2008.txt.184      631 2008-05-01   1 00:51:06    23032  SE-1-1-95
-## Draga_05_2008.txt.186      631 2008-05-01   1 01:11:06    23032  SE-1-1-95
-## Draga_05_2008.txt.3676     541 2008-05-01   1 02:37:55    25545 SE-1-10-03
-## Draga_05_2008.txt.276      607 2008-05-01   1 03:23:14    23266  HU-2-3-95
-## Draga_05_2008.txt.3374     542 2008-05-01   1 03:28:42    25111  SE-1-8-01
-## Draga_05_2008.txt.188      631 2008-05-01   1 03:31:06    23032  SE-1-1-95
-##                               PUERTO FK_TIPO_F F_LOCALIZA N_LONGITUD N_LATITUD
-## Draga_05_2008.txt.184       SANLUCAR         3  01-MAY-08  -6.338002  36.80437
-## Draga_05_2008.txt.186       SANLUCAR         3  01-MAY-08  -6.338000  36.80437
-## Draga_05_2008.txt.3676      SANLUCAR         3  01-MAY-08  -6.338063  36.80459
-## Draga_05_2008.txt.276  ISLA CRISTINA         3  01-MAY-08  -6.962827  37.18792
-## Draga_05_2008.txt.3374      SANLUCAR         3  01-MAY-08  -6.337983  36.80457
-## Draga_05_2008.txt.188       SANLUCAR         3  01-MAY-08  -6.338008  36.80435
-##                             N_X     N_Y N_VELOCIDAD N_RUMBO N_SATELITES
-## Draga_05_2008.txt.184  202289.3 4078573     0.11825 167.170           9
-## Draga_05_2008.txt.186  202289.4 4078573     0.11825 159.820           9
-## Draga_05_2008.txt.3676 202284.6 4078598     0.11285  48.787           8
-## Draga_05_2008.txt.276  148294.7 4123282     0.11393  56.740           7
-## Draga_05_2008.txt.3374 202291.7 4078596     0.12959 145.320           8
-## Draga_05_2008.txt.188  202288.6 4078571     0.21544 154.960           8
-##                        N_EN_PUERTO L_BACKUP FK_ACTIVI FK_ESTADO FK_MODAL  ANO
-## Draga_05_2008.txt.184            1        0         1         5        0 2008
-## Draga_05_2008.txt.186            1        0         1         5        0 2008
-## Draga_05_2008.txt.3676           1        0         1         5        0 2008
-## Draga_05_2008.txt.276            1        0         2         5        0 2008
-## Draga_05_2008.txt.3374           1        0         1         5        0 2008
-## Draga_05_2008.txt.188            1        0         1         5        0 2008
-##                        MES MANIOBRA          fecha_hora    DISTANCIA
-## Draga_05_2008.txt.184    5        M 2008-05-01 00:51:06           NA
-## Draga_05_2008.txt.186    5        M 2008-05-01 01:11:06 2.378859e-01
-## Draga_05_2008.txt.3676   5        M 2008-05-01 02:37:55 2.510427e+01
-## Draga_05_2008.txt.276    5        M 2008-05-01 03:23:14 6.996624e+04
-## Draga_05_2008.txt.3374   5        M 2008-05-01 03:28:42 6.997312e+04
-## Draga_05_2008.txt.188    5        M 2008-05-01 03:31:06 2.456393e+01
-\end{verbatim}
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{calcular\_DISTANCIA }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(lat1, lon1, lat2, lon2) \{}
+  \CommentTok{\# Converto to radians}
+\NormalTok{  lat1\_rad }\OtherTok{\textless{}{-}}\NormalTok{ lat1 }\SpecialCharTok{*}\NormalTok{ pi }\SpecialCharTok{/} \DecValTok{180}
+\NormalTok{  lon1\_rad }\OtherTok{\textless{}{-}}\NormalTok{ lon1 }\SpecialCharTok{*}\NormalTok{ pi }\SpecialCharTok{/} \DecValTok{180}
+\NormalTok{  lat2\_rad }\OtherTok{\textless{}{-}}\NormalTok{ lat2 }\SpecialCharTok{*}\NormalTok{ pi }\SpecialCharTok{/} \DecValTok{180}
+\NormalTok{  lon2\_rad }\OtherTok{\textless{}{-}}\NormalTok{ lon2 }\SpecialCharTok{*}\NormalTok{ pi }\SpecialCharTok{/} \DecValTok{180}
+  \CommentTok{\# Ratio earth in mts}
+\NormalTok{  radio\_tierra }\OtherTok{\textless{}{-}} \DecValTok{6371000}
+  \CommentTok{\# Calculate distance using haversine equation}
+\NormalTok{  dlat }\OtherTok{\textless{}{-}}\NormalTok{ lat2\_rad }\SpecialCharTok{{-}}\NormalTok{ lat1\_rad}
+\NormalTok{  dlon }\OtherTok{\textless{}{-}}\NormalTok{ lon2\_rad }\SpecialCharTok{{-}}\NormalTok{ lon1\_rad}
+\NormalTok{  a }\OtherTok{\textless{}{-}} \FunctionTok{sin}\NormalTok{(dlat }\SpecialCharTok{/} \DecValTok{2}\NormalTok{)}\SpecialCharTok{\^{}}\DecValTok{2} \SpecialCharTok{+} \FunctionTok{cos}\NormalTok{(lat1\_rad) }\SpecialCharTok{*} \FunctionTok{cos}\NormalTok{(lat2\_rad) }\SpecialCharTok{*} \FunctionTok{sin}\NormalTok{(dlon }\SpecialCharTok{/} \DecValTok{2}\NormalTok{)}\SpecialCharTok{\^{}}\DecValTok{2}
+\NormalTok{  c }\OtherTok{\textless{}{-}} \DecValTok{2} \SpecialCharTok{*} \FunctionTok{atan2}\NormalTok{(}\FunctionTok{sqrt}\NormalTok{(a), }\FunctionTok{sqrt}\NormalTok{(}\DecValTok{1} \SpecialCharTok{{-}}\NormalTok{ a))}
+\NormalTok{  DISTANCIA }\OtherTok{\textless{}{-}}\NormalTok{ radio\_tierra }\SpecialCharTok{*}\NormalTok{ c}
+  \FunctionTok{return}\NormalTok{(DISTANCIA)}
+\NormalTok{\}}
+\CommentTok{\# transform date  POSIXct con lubridate}
+\NormalTok{datos}\SpecialCharTok{$}\NormalTok{fecha\_hora }\OtherTok{\textless{}{-}} \FunctionTok{ymd\_hms}\NormalTok{(}\FunctionTok{paste}\NormalTok{(datos}\SpecialCharTok{$}\NormalTok{FECHA, datos}\SpecialCharTok{$}\NormalTok{HORA))}
+
+\CommentTok{\# orden DF in arrange by time}
+\NormalTok{datos }\OtherTok{\textless{}{-}}\NormalTok{ datos }\SpecialCharTok{\%\textgreater{}\%} 
+  \FunctionTok{arrange}\NormalTok{(fecha\_hora)}
+\CommentTok{\# estimate disntance by row}
+\NormalTok{datos}\SpecialCharTok{$}\NormalTok{DISTANCIA }\OtherTok{\textless{}{-}} \FunctionTok{mapply}\NormalTok{(calcular\_DISTANCIA,}
+\NormalTok{                          datos}\SpecialCharTok{$}\NormalTok{N\_LATITUD,}
+\NormalTok{                          datos}\SpecialCharTok{$}\NormalTok{N\_LONGITUD,}
+                          \FunctionTok{lag}\NormalTok{(datos}\SpecialCharTok{$}\NormalTok{N\_LATITUD),}
+                          \FunctionTok{lag}\NormalTok{(datos}\SpecialCharTok{$}\NormalTok{N\_LONGITUD))}
+
+\CommentTok{\# firts row is NA because  is firts register}
+\NormalTok{datos}\SpecialCharTok{$}\NormalTok{DISTANCIA[}\DecValTok{1}\NormalTok{] }\OtherTok{\textless{}{-}} \ConstantTok{NA}
+\FunctionTok{head}\NormalTok{(datos)}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{muxe9todo-2}{%
 \subsubsection{Método 2}\label{muxe9todo-2}}
@@ -379,8 +301,6 @@ Probar forma que indica Ana Magro, que es calcular tiempo de arrastre X Velocida
 ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las variables de velocidad en metros/seg. y tiempo recorrido por la rastra.
 
 Gafico velocidad y SA promedio por barco
-
-\begin{center}\includegraphics{SAR_Method_files/figure-latex/unnamed-chunk-14-1} \end{center}
 
 Calculo el SAR
 
@@ -404,60 +324,7 @@ Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Est
 \hypertarget{leo-shapes-y-transformo-a-la-proyecciuxf3n-correcta.}{%
 \subsection{Leo Shapes y transformo a la proyección correcta.}\label{leo-shapes-y-transformo-a-la-proyecciuxf3n-correcta.}}
 
-\begin{verbatim}
-## Reading layer `costa_proyectada' from data source 
-##   `/Users/mauriciomardones/IEO/IN_BENTOS/SHP_Chirla/costa_proyectada.shp' 
-##   using driver `ESRI Shapefile'
-## Simple feature collection with 10 features and 4 fields
-## Geometry type: POLYGON
-## Dimension:     XY
-## Bounding box:  xmin: -34115.27 ymin: 3891271 xmax: 301588.8 ymax: 4173659
-## Projected CRS: WGS_1984_Complex_UTM_Zone_30N
-\end{verbatim}
-
-\begin{verbatim}
-## Reading layer `cuadriculas_definitivo' from data source 
-##   `/Users/mauriciomardones/IEO/IN_BENTOS/SHP_Chirla/cuadriculas_definitivo.shp' 
-##   using driver `ESRI Shapefile'
-## Simple feature collection with 219 features and 2 fields
-## Geometry type: POLYGON
-## Dimension:     XY
-## Bounding box:  xmin: 109273.6 ymin: 4071852 xmax: 198073.5 ymax: 4125446
-## Projected CRS: ETRS89 / UTM zone 30N
-\end{verbatim}
-
-\begin{verbatim}
-## Reading layer `batimetria_rediam20x20_10m_id' from data source 
-##   `/Users/mauriciomardones/IEO/IN_BENTOS/SHP_Chirla/batimetria_rediam20x20_10m_id.shp' 
-##   using driver `ESRI Shapefile'
-## Simple feature collection with 1 feature and 1 field
-## Geometry type: MULTIPOLYGON
-## Dimension:     XY
-## Bounding box:  xmin: 99337.29 ymin: 4070000 xmax: 201873.6 ymax: 4127412
-## Projected CRS: ETRS89 / UTM zone 30N
-\end{verbatim}
-
-\begin{verbatim}
-## Reading layer `Habitats_region_IV' from data source 
-##   `/Users/mauriciomardones/IEO/IN_BENTOS/SHP_Chirla/Habitats_region_IV.shp' 
-##   using driver `ESRI Shapefile'
-## Simple feature collection with 70739 features and 21 fields
-## Geometry type: MULTIPOLYGON
-## Dimension:     XYZ
-## Bounding box:  xmin: -1543382 ymin: 4300621 xmax: -114914.2 ymax: 6106855
-## z_range:       zmin: 0 zmax: 0
-## Projected CRS: WGS 84 / Pseudo-Mercator
-\end{verbatim}
-
-\begin{verbatim}
-## Reading layer `Demarcaciones_Marinas_WGS84_2018' from data source 
-##   `/Users/mauriciomardones/IEO/IN_BENTOS/SHP_Chirla' using driver `ESRI Shapefile'
-## Simple feature collection with 5 features and 10 fields
-## Geometry type: MULTIPOLYGON
-## Dimension:     XY
-## Bounding box:  xmin: -21.90544 ymin: 24.59355 xmax: 6.3 ymax: 46.86761
-## Geodetic CRS:  WGS 84
-\end{verbatim}
+Mapa test
 
 Ahora identifico la base que quiero plotear y hago el calculo de \texttt{SAR}
 
@@ -470,13 +337,9 @@ Y ahora veo como es el ttotal del SAR en \% por celda
 
 ploteo SAR
 
-\begin{center}\includegraphics{SAR_Method_files/figure-latex/unnamed-chunk-17-1} \end{center}
-
 Ahora trato de engrillar los habitat
 
 Priebo el mapa
-
-\begin{center}\includegraphics{SAR_Method_files/figure-latex/unnamed-chunk-19-1} \end{center}
 
 Cuento cuantas estaciones hay por habitat.
 
@@ -484,31 +347,6 @@ Cuento cuantas estaciones hay por habitat.
 \subsection{Calculo de lances por estacion o por habitat}\label{calculo-de-lances-por-estacion-o-por-habitat}}
 
 Pero para esto, primer debemos asignar un ID para cada operación.
-
-\begin{verbatim}
-## Simple feature collection with 6 features and 36 fields
-## Geometry type: POLYGON
-## Dimension:     XY
-## Bounding box:  xmin: -6.471536 ymin: 36.89203 xmax: -6.449277 ymax: 36.92538
-## Geodetic CRS:  WGS 84
-## # A tibble: 6 x 37
-## # Groups:   MATRICULA [1]
-##   Estaciones     area FK_ERES FECHA        DIA HORA    FK_BUQUE MATRICULA PUERTO
-##        <dbl>    <dbl>   <int> <date>     <int> <chr>      <int> <chr>     <chr> 
-## 1        196 1305730.    1225 2008-09-04     4 09:15:~    22643 AL-2-1833 LEPE  
-## 2        196 1305730.    1225 2008-09-04     4 09:18:~    22643 AL-2-1833 LEPE  
-## 3        197 3098190.    1225 2008-09-04     4 09:21:~    22643 AL-2-1833 LEPE  
-## 4        197 3098190.    1225 2008-09-04     4 09:27:~    22643 AL-2-1833 LEPE  
-## 5        197 3098190.    1225 2008-09-04     4 09:27:~    22643 AL-2-1833 LEPE  
-## 6        197 3098190.    1225 2008-09-04     4 09:30:~    22643 AL-2-1833 LEPE  
-## # i 28 more variables: FK_TIPO_F <int>, F_LOCALIZA <chr>, N_X <dbl>, N_Y <dbl>,
-## #   N_VELOCIDAD <dbl>, N_RUMBO <dbl>, N_SATELITES <int>, N_EN_PUERTO <int>,
-## #   L_BACKUP <int>, FK_ACTIVI <int>, FK_ESTADO <int>, FK_MODAL <int>,
-## #   ANO <dbl>, MES <dbl>, MANIOBRA <chr>, fecha_hora <dttm>, DISTANCIA <dbl>,
-## #   diff <drtn>, diff_secs <dbl>, VELONUE <dbl>, DISTANCIA2 <dbl>, SA <dbl>,
-## #   CELDAM2 <dbl>, length.out <int>, SAR <dbl>, geometry <POLYGON [°]>,
-## #   diff_secs_next <dbl>, ID_Lance <int>
-\end{verbatim}
 
 Solo para visualizar, cambio el objeto a \texttt{data.frame}. Pero debo considerar \texttt{idlance4} para engrillar.
 

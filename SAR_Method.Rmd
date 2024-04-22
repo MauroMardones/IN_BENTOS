@@ -23,12 +23,37 @@ header-includes:
 - \selectfont
 ---
 
+<!-- --- -->
+<!-- title: "Análisis exploratorio y preparación base de datos variables ambientales en la PA" -->
+<!-- subtitle: "Insumo Modelo de evaluación de stock de dinámica poblacional del Krill (Euphausia superba)" -->
+<!-- author: "Mauricio Mardones" -->
+<!-- date:  "`r format(Sys.time(), '%d %B, %Y')`" -->
+<!-- #bibliography: seaice.bib -->
+<!-- #csl: apa.csl -->
+<!-- link-citations: yes -->
+<!-- linkcolor: blue -->
+<!-- output: -->
+<!--   html_document: -->
+<!--     keep_md: true -->
+<!--     toc: true -->
+<!--     toc_float: -->
+<!--       collapsed: false -->
+<!--       smooth_scroll: false -->
+<!--     theme: cosmo -->
+<!--     fontsize: 0.9em -->
+<!--     linestretch: 1.7 -->
+<!--     html-math-method: katex -->
+<!--     self-contained: true -->
+<!--     code-tools: true -->
+<!-- --- -->
+
 
 \newpage
 
 ```{r setup1, echo =FALSE}
 rm(list = ls())
 knitr::opts_chunk$set(message = FALSE,
+                      eval = FALSE,
                       warning = FALSE,
                       echo=FALSE,
                       fig.align = 'center',
@@ -41,7 +66,7 @@ options(bitmapType = "cairo")
 # Lo mapas se hacen mas rapido
 ```
 
-```{r libs}
+```{r libs, message=FALSE}
 library(tidyverse)
 library(ggridges)
 library(readxl)
@@ -66,6 +91,7 @@ This abstract presents a method to calculate the SAR (Swept Area Ratio) using sa
 # INTRODUCTION
 
 
+Making better use of tracking data can reveal the spatiotemporal and intraspecific variability of species distributions 
 
 # METHODOLOGY
 
@@ -112,16 +138,16 @@ for (archivo in cajas2009) {
 #Uno y verifico dimension
 cajas2009uni <- do.call(rbind, 
                         lista_datos)
-head(cajas2009uni)
 ```
-
 
 ## RESULTS 
-Identifico la cantidad de embarcaciones presentes en la BD
 
-```{r echo=TRUE}
-unique(cajas2009uni$MATRICULA)
+Identify the data base structure
+
+```{r}
+glimpse(cajas2009uni)
 ```
+
 
 
 
@@ -190,8 +216,8 @@ velhis <- ggplot()+
                      fill=cajasfilp$N_VELOCIDAD < 1.5),
                  binwidth = 0.02)+
   scale_fill_viridis_d()+
-  theme(legend.position = "none")+
-  theme_few()
+  theme_few()+
+  theme(legend.position = "none")
 velhis
 ```
 
@@ -226,27 +252,24 @@ dim(cajasfil2)
 
 4- Ahora calculo las distancias entre puntos. como??
 
+\newpage
 ### Método 1
 
-```{r}
-# Función para calcular la distancia entre dos puntos
+```{r echo=TRUE}
 calcular_DISTANCIA <- function(lat1, lon1, lat2, lon2) {
-  # Convertir grados a radianes
+  # Converto to radians
   lat1_rad <- lat1 * pi / 180
   lon1_rad <- lon1 * pi / 180
   lat2_rad <- lat2 * pi / 180
   lon2_rad <- lon2 * pi / 180
-  
-  # Radio de la Tierra en metros
+  # Ratio earth in mts
   radio_tierra <- 6371000
-  
-  # Calcular la DISTANCIA utilizando la fórmula del haversine
+  # Calculate distance using haversine equation
   dlat <- lat2_rad - lat1_rad
   dlon <- lon2_rad - lon1_rad
   a <- sin(dlat / 2)^2 + cos(lat1_rad) * cos(lat2_rad) * sin(dlon / 2)^2
   c <- 2 * atan2(sqrt(a), sqrt(1 - a))
   DISTANCIA <- radio_tierra * c
-  
   return(DISTANCIA)
 }
 
@@ -384,6 +407,25 @@ dema1 <- st_transform(demarca,
 ```
 
 
+Mapa test
+```{r}
+# Crea un mapa de Europa
+europe_map <- map_data("world")
+
+# Visualiza el mapa de Europa
+ggplot() +
+  geom_polygon(data = europe_map, 
+               aes(x = long, 
+                   y = lat, 
+                   group = group), 
+               fill = "#fee8c8", 
+               color = "black") +
+  coord_fixed(1.3) +  # Ajusta la relación de aspecto
+  theme_few()  # Estilo del gráfico
+
+```
+
+
 Ahora identifico la base que quiero plotear y hago el calculo de `SAR`
 
 ```{r ssmu1}
@@ -428,15 +470,16 @@ masrend <- ggplot() +
   geom_sf(data = costandalucia1, 
           fill="#fee8c8") +
   geom_sf(data = grillasar %>% 
-            filter(SAR<1) %>% 
+            filter(SAR>0,
+                   SAR<1) %>% 
             drop_na(SAR), 
           aes(fill=cut(SAR,
-                       breaks = seq(0, 1, by = 0.1))))+
+                       breaks = seq(0, 1, by = 0.2))))+
   # geom_sf(data = fisicomar1, alpha=0.1,
   #         linetype=5) +
   scale_fill_brewer(type = "qual",
                     #labels = label, # if you must
-                    palette = "Oranges",
+                    palette = "Reds",
                     name = "SAR") +
     coord_sf() +
   xlab(expression(paste(Longitude^o,~'O'))) +
@@ -452,8 +495,8 @@ masrend <- ggplot() +
   #   box.padding = 0.7,
   #   max.overlaps = 50) +
   theme_few()+
-  xlim(-7.6,-6.2)+
-  ylim(36.6, 37.3)
+  xlim(-7.6,-6.3)+
+  ylim(36.65, 37.3)
 masrend
 ```
 
