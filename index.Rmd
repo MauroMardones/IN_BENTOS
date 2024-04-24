@@ -1,36 +1,31 @@
 ---
-title: "![](IEO-logo2.png){width=10cm}"
-output:
-  bookdown::pdf_document2:
-    includes:
-      before_body: titulo.sty
-    keep_tex: yes
-    number_sections: no
-    toc: true
-    toc_depth: 3
+title: "Methodological implementation of Swept Area Ratio (SAR) in the wedge clam fishery Chamelea galllina in the Gulf of Cádiz, Spain"
+subtitle: "Suplementary Information to IN-BENTO project (Fund- Europe Union)"
+author: "Magro, A., Mardones. M., Rodríguez-Rua, A., Román. S. and Delgado, M"
+date:  "`r format(Sys.time(), '%d %B, %Y')`"
 bibliography: INBENTO.bib
 csl: apa.csl
 link-citations: yes
 linkcolor: blue
-indent: no
-header-includes:
-- \usepackage{fancyhdr}
-- \pagestyle{fancy}
-- \fancyhf{}
-- \lfoot[\thepage]{}
-- \rfoot[]{\thepage}
-- \fontsize{12}{22}
-- \selectfont
+output:
+  html_document:
+    keep_md: true
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    theme: cosmo
+    fontsize: 0.9em
+    linestretch: 1.7
+    html-math-method: katex
+    self-contained: true
+    code-tools: true
 ---
-
-\newpage
 
 ```{r setup1, echo =FALSE}
 rm(list = ls())
 knitr::opts_chunk$set(message = FALSE,
-                      eval = FALSE,
                       warning = FALSE,
-                      echo=FALSE,
                       fig.align = 'center',
                       dev = 'jpeg',
                       dpi = 300, 
@@ -59,7 +54,7 @@ library(sp)
 library(sf)
 ```
 
-# ABSTRACT
+## ABSTRACT
 
 This abstract presents a method to calculate the SAR (Swept Area Ratio) using satellite data from a fleet of nearly 100 vessels in the artisanal fishing of Chirla in the Gulf of Cadiz. Artisanal fisheries, like Chirla fishing, often lack comprehensive data, hampering effective management. Leveraging satellite imagery, particularly through green boxes technology, offers a unique advantage by providing real-time spatial information on fishing activity. With this method, we can continuously identify the fleet's effort in both spatial and temporal terms. The objective is to develop an ad hoc approach reproducible through accessible codes and open data, facilitating sustainable fisheries management in the Gulf of Cadiz and beyond.
 
@@ -595,10 +590,6 @@ sumest <- idlance5 %>%
   summarise(num_lances = n_distinct(ID_Lance, na.rm = TRUE))
 ```
 
-
-# DISCUSSION
-
-# CONCLUSION
 
 \newpage
 
