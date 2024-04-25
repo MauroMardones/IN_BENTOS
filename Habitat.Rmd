@@ -1,0 +1,229 @@
+---
+title: "![](IEO-logo2.png){width=10cm}"
+output:
+  bookdown::pdf_document2:
+    includes:
+      before_body: titulo3.sty
+    keep_tex: yes
+    number_sections: no
+    toc: true
+    toc_depth: 3
+bibliography: INBENTO.bib
+csl: apa.csl
+link-citations: yes
+linkcolor: blue
+indent: no
+header-includes:
+- \usepackage{fancyhdr}
+- \pagestyle{fancy}
+- \fancyhf{}
+- \lfoot[\thepage]{}
+- \rfoot[]{\thepage}
+- \fontsize{12}{22}
+- \selectfont
+---
+
+\newpage
+
+```{r setup1, echo =FALSE}
+rm(list = ls())
+knitr::opts_chunk$set(message = FALSE,
+                      eval = FALSE,
+                      warning = FALSE,
+                      echo=FALSE,
+                      fig.align = 'center',
+                      dev = 'jpeg',
+                      dpi = 300, 
+                      fig.align='center')
+#XQuartz is a mess, put this in your onload to default to cairo instead
+options(bitmapType = "cairo") 
+# (https://github.com/tidyverse/ggplot2/issues/2655)
+# Lo mapas se hacen mas rapido
+```
+
+```{r libs, message=FALSE}
+library(tidyverse)
+library(ggridges)
+library(readxl)
+library(here)
+library(lubridate)
+library(readr)
+library(ggthemes)
+library(hrbrthemes)
+library(kableExtra)
+library(gtsummary)
+library(egg)
+library(ggthemes)
+library(geosphere)
+library(sp)
+library(sf)
+```
+
+
+## Context
+
+
+Trabajo de manipulación de datos de habitats
+
+
+
+Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Estos datos vectoriales fueron obtenidos desde la paina oficial de datos espaciales de la Junta de Andalucia [Shapesfile](https://portalrediam.cica.es/descargas?path=%2F08_AMBITOS_INTERES_AMBIENTAL%2F02_LITORAL_MARINO%2F04_SOCIOECONOMIA%2FZonasProduccionMoluscos)
+
+## Leo Shapes y transformo a la proyección correcta.
+```{r echo=FALSE}
+costandalucia <- st_read(here("SHP_Chirla",
+                              "costa_proyectada.shp"))
+grilla <- st_read(here("SHP_Chirla",
+                              "cuadriculas_definitivo.shp"))
+habitat <- st_read(here("SHP_Chirla",
+                     "Habitats_region_IV.shp"))
+demarca <- st_read("SHP_Chirla",
+                   "Demarcaciones_Marinas_WGS84_2018")
+# Transformo a objetos sf con la crs correcta
+grilla1 <- st_transform(grilla, 
+                        "+init=epsg:4326")
+costandalucia1 <- st_transform(costandalucia,
+                               "+init=epsg:4326")
+bati1 <- st_transform(bati,
+                      "+init=epsg:4326")
+
+habi1 <- st_transform(habitat,
+                      "+init=epsg:4326")
+# to UTM 3578
+
+dema1 <- st_transform(demarca,
+                      "+init=epsg:4326")
+
+```
+
+ahora cambio nombres de grilla
+
+
+```{r gri}
+# the first object dsargrillada# the first object drives the output geometry
+grilla2 <- grilla1 %>%
+  rename("Estaciones" = "ID_CELDA") 
+```
+
+
+
+Ahora trato de engrillar los habitat
+```{r}
+# # Clean the input data by removing duplicate vertices and making the object topologically valid
+sf_objeto_valido <- st_make_valid(habi1)
+# 
+ # Corto la grilla dentro de las SSMU
+
+habigilla <- sf_objeto_valido %>% 
+  select(c(11,22)) %>% 
+  filter(MSFD_BBHT != "Na") %>% 
+  filter(MSFD_BBHT %in% c("Circalittoral sand",
+                                    "Infralittoral sand" ,
+                                    "Circalittoral coarse sediment",
+                                    "Infralittoral coarse sediment" ,
+                                    "Infralittoral rock and biogenic reef",
+                                    "Circalittoral rock and biogenic reef",
+                                    "Circalittoral mud",
+                                    "Infralittoral mud"))
+
+
+habi3 <- st_join(grilla2, habigilla)
+```
+Priebo el mapa
+
+```{r warning=FALSE}
+mas <- ggplot() +
+  geom_sf(data = habi1 %>% 
+            filter(MSFD_BBHT %in% c("Circalittoral sand",
+                                    "Infralittoral sand" ,
+                                    "Circalittoral coarse sediment",
+                                    "Infralittoral coarse sediment" ,
+                                    "Infralittoral rock and biogenic reef",
+                                    "Circalittoral rock and biogenic reef",
+                                    "Circalittoral mud",
+                                    "Infralittoral mud")),
+          aes(fill=MSFD_BBHT)) +
+  geom_sf(data = habi3 %>% 
+            drop_na(MSFD_BBHT),
+          aes(fill=MSFD_BBHT)) +
+  geom_sf(data = costandalucia1, fill="#fee8c8") +
+  #geom_sf(data = bati1, fill="white", color="blue") +
+  # geom_sf(data = fisicomar1, alpha=0.1,
+  #         linetype=5) +
+  scale_fill_viridis_d(option="A")+
+  coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))+
+  # ggrepel::geom_label_repel(
+  #    data = habi3 %>% 
+  #           filter(MSFD_BBHT %in% c("Circalittoral sand",
+  #                                   "Infralittoral sand" ,
+  #                                   "Circalittoral coarse sediment",
+  #                                   "Infralittoral coarse sediment" ,
+  #                                   "Infralittoral rock and biogenic reef",
+  #                                   "Circalittoral rock and biogenic reef",
+  #                                   "Circalittoral mud",
+  #                                   "Infralittoral mud")),
+  #    aes(label = MSFD_BBHT,
+  #        geometry = geometry),
+  #    stat = "sf_coordinates",
+  #    min.segment.length = ,
+  #    colour = "black",
+  #    size = 2,
+  #    segment.colour = "black",
+  #    box.padding = 0.7,
+  #    max.overlaps = 50,
+  #    max_time = 0.5) +
+  theme_few()+
+  #theme(legend.position = "none")+
+  xlim(-7.6,-6)+
+  ylim(36.6, 37.4)
+mas
+```
+
+
+Cuento cuantas estaciones hay por habitat.
+```{r}
+estahib <- habi3 %>% 
+  group_by(habi3$MSFD_BBHT) %>% 
+  summarise(NESTAC = n()) %>% 
+  rename("Habitat" = "habi3$MSFD_BBHT",
+         "Nº Estaciones" = "NESTAC") %>% 
+  as.data.frame() %>% 
+  select(c(1,2))
+
+
+kbl(estahib)
+```
+
+
+
+De acuerdo a esto, ahora unificaré los habitat que consideremos importantes. 
+La idea es identificar los registros con tiempo efectivo de arrastre como lo muestra la Figura \ref{fig:esq2};
+
+```{r esq2, echo=FALSE, out.width = "50%", fig.align='center', fig.cap="Esquema para identificar vinculos entre habitats"}
+knitr::include_graphics("FIG/diag_habi.jpg")
+```
+De acuerdo a esto comenzarmos por juntar los `Infra` y `Circa`
+
+```{r}
+habijoin <- habi3 %>% 
+  mutate(MSFD_BBHT = case_when(
+    MSFD_BBHT = "Circalittoral sand" ~ "CIRCA"))
+    
+    
+    "Infralittoral sand" ,
+                                    "Circalittoral coarse sediment",
+                                    "Infralittoral coarse sediment" ,
+                                    "Infralittoral rock and biogenic reef",
+                                    "Circalittoral rock and biogenic reef",
+                                    "Circalittoral mud",
+                                    "Infralittoral mud",
+    TRUE ~ NA_character_  # Por si acaso hay valores fuera de los rangos especificados
+  ))
+```
+
+
+
+
+
