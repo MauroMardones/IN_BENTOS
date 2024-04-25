@@ -515,9 +515,6 @@ sumest <- idlance5 %>%
 ```
 
 
-# DISCUSSION
-
-# CONCLUSION
 
 \newpage
 

@@ -77,18 +77,22 @@ grilla <- st_read(here("SHP_Chirla",
                               "cuadriculas_definitivo.shp"))
 habitat <- st_read(here("SHP_Chirla",
                      "Habitats_region_IV.shp"))
+
+habitat  <- terra::vect(here("SHP_Chirla",
+                     "Habitats_region_IV.shp")) %>% 
+  st_as_sf()
+
+
 demarca <- st_read("SHP_Chirla",
                    "Demarcaciones_Marinas_WGS84_2018")
 # Transformo a objetos sf con la crs correcta
 grilla1 <- st_transform(grilla, 
                         "+init=epsg:4326")
 costandalucia1 <- st_transform(costandalucia,
-                               "+init=epsg:4326")
-bati1 <- st_transform(bati,
-                      "+init=epsg:4326")
+                                "+init=epsg:4326")
 
 habi1 <- st_transform(habitat,
-                      "+init=epsg:4326")
+                       "+init=epsg:4326")
 # to UTM 3578
 
 dema1 <- st_transform(demarca,
