@@ -208,21 +208,56 @@ De acuerdo a esto comenzarmos por juntar los `Infra` y `Circa`
 
 ```{r}
 habijoin <- habi3 %>% 
-  mutate(MSFD_BBHT = case_when(
-    MSFD_BBHT = "Circalittoral sand" ~ "CIRCA"))
-    
-    
-    "Infralittoral sand" ,
-                                    "Circalittoral coarse sediment",
-                                    "Infralittoral coarse sediment" ,
-                                    "Infralittoral rock and biogenic reef",
-                                    "Circalittoral rock and biogenic reef",
-                                    "Circalittoral mud",
-                                    "Infralittoral mud",
-    TRUE ~ NA_character_  # Por si acaso hay valores fuera de los rangos especificados
+  mutate(HABITATJOIN = case_when(
+    startsWith(MSFD_BBHT, "Circa") ~ "CIRCALITTORAL",
+    startsWith(MSFD_BBHT, "Infra") ~ "INFRALITTORAL",
+    TRUE ~ NA_character_
   ))
 ```
 
+
+ahora veo el mapa
+
+```{r warning=FALSE}
+habijoinmap <- ggplot() +
+  geom_sf(data = habijoin %>% 
+            drop_na(HABITATJOIN),
+          aes(fill=HABITATJOIN)) +
+  geom_sf(data = costandalucia1, fill="#fee8c8") +
+  #geom_sf(data = bati1, fill="white", color="blue") +
+  # geom_sf(data = fisicomar1, alpha=0.1,
+  #         linetype=5) +
+  scale_fill_viridis_d(option="B")+
+  coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))+
+  # ggrepel::geom_label_repel(
+  #    data = habi3 %>% 
+  #           filter(MSFD_BBHT %in% c("Circalittoral sand",
+  #                                   "Infralittoral sand" ,
+  #                                   "Circalittoral coarse sediment",
+  #                                   "Infralittoral coarse sediment" ,
+  #                                   "Infralittoral rock and biogenic reef",
+  #                                   "Circalittoral rock and biogenic reef",
+  #                                   "Circalittoral mud",
+  #                                   "Infralittoral mud")),
+  #    aes(label = MSFD_BBHT,
+  #        geometry = geometry),
+  #    stat = "sf_coordinates",
+  #    min.segment.length = ,
+  #    colour = "black",
+  #    size = 2,
+  #    segment.colour = "black",
+  #    box.padding = 0.7,
+  #    max.overlaps = 50,
+  #    max_time = 0.5) +
+  theme_few()+
+  #theme(legend.position = "none")+
+  xlim(-7.6,-6)+
+  ylim(36.6, 37.4)
+habijoinmap
+```
+ahora probbar con otro esquema de unir habitats...
 
 
 
