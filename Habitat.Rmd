@@ -231,7 +231,8 @@ habijoinmap <- ggplot() +
   #geom_sf(data = bati1, fill="white", color="blue") +
   # geom_sf(data = fisicomar1, alpha=0.1,
   #         linetype=5) +
-  scale_fill_viridis_d(option="B")+
+  scale_fill_viridis_d(option="B",
+                       name= "HABITAT JOINED")+
   coord_sf() +
   xlab(expression(paste(Longitude^o,~'O'))) +
   ylab(expression(paste(Latitude^o,~'S')))+
@@ -256,7 +257,7 @@ habijoinmap <- ggplot() +
   #    max.overlaps = 50,
   #    max_time = 0.5) +
   theme_few()+
-  #theme(legend.position = "none")+
+  theme(legend.position = "bottom")+
   xlim(-7.6,-6)+
   ylim(36.6, 37.4)
 habijoinmap
@@ -264,5 +265,59 @@ habijoinmap
 ahora probbar con otro esquema de unir habitats...
 
 
+```{r}
+habijoin2 <- habi3 %>%
+  mutate(HABITATJOIN2 = case_when(
+    str_detect(MSFD_BBHT, "sand") ~ "SAND",
+    str_detect(MSFD_BBHT, "rock") ~ "ROCK",
+    str_detect(MSFD_BBHT, "coarse") ~ "COARSE",
+    str_detect(MSFD_BBHT, "mud") ~ "MUD",
+    TRUE ~ NA_character_  # Si no se encuentra ninguna palabra, devuelve NA
+  ))
+```
 
+ahora el mapa 2
+
+ahora veo el mapa
+
+```{r warning=FALSE}
+habijoinmap2 <- ggplot() +
+  geom_sf(data = habijoin2 %>% 
+            drop_na(HABITATJOIN2),
+          aes(fill=HABITATJOIN2)) +
+  geom_sf(data = costandalucia1, fill="#fee8c8") +
+  #geom_sf(data = bati1, fill="white", color="blue") +
+  # geom_sf(data = fisicomar1, alpha=0.1,
+  #         linetype=5) +
+  scale_fill_viridis_d(option="F",
+                       name= "HABITAT JOINED 2")+
+  coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))+
+  # ggrepel::geom_label_repel(
+  #    data = habi3 %>% 
+  #           filter(MSFD_BBHT %in% c("Circalittoral sand",
+  #                                   "Infralittoral sand" ,
+  #                                   "Circalittoral coarse sediment",
+  #                                   "Infralittoral coarse sediment" ,
+  #                                   "Infralittoral rock and biogenic reef",
+  #                                   "Circalittoral rock and biogenic reef",
+  #                                   "Circalittoral mud",
+  #                                   "Infralittoral mud")),
+  #    aes(label = MSFD_BBHT,
+  #        geometry = geometry),
+  #    stat = "sf_coordinates",
+  #    min.segment.length = ,
+  #    colour = "black",
+  #    size = 2,
+  #    segment.colour = "black",
+  #    box.padding = 0.7,
+  #    max.overlaps = 50,
+  #    max_time = 0.5) +
+  theme_few()+
+  theme(legend.position = "bottom")+
+  xlim(-7.6,-6)+
+  ylim(36.6, 37.4)
+habijoinmap2
+```
 
