@@ -88,7 +88,7 @@ besito <- read_excel(here("DATOS",
 ## Datos Fauna
 
 ```{r eval=FALSE}
-unique(fauna$ID_FINAL)
+unique(fauna$Especie_Final)
 names(fauna)
 ```
 
@@ -102,8 +102,8 @@ cantes <- fauna %>%
             SUMPES = sum(`Peso total (g)...50`))
 
 indsum <- gEspecie_Finalindsum <- ggplot(cantes %>% 
-                   drop_na(ID_FINAL))+
-  geom_col(aes(x =ID_FINAL, y= SUM, fill=ID_FINAL))+
+                   drop_na(Especie_Final))+
+  geom_col(aes(x =Especie_Final, y= SUM, fill=Especie_Final))+
   theme_few()+
   theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
@@ -113,13 +113,14 @@ indsum <- gEspecie_Finalindsum <- ggplot(cantes %>%
   
 
 pessum <- ggplot(cantes %>% 
-                   drop_na(ID_FINAL))+
-  geom_col(aes(x =ID_FINAL, y= SUMPES, fill=ID_FINAL))+
+                   drop_na(Especie_Final))+
+  geom_col(aes(x =reorder(Especie_Final, SUMPES,
+                          decresing=FALSE), y= SUMPES, fill=Especie_Final))+
   theme_few()+
   theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
                                      vjust = 0.5,
-                                     size = 5),
+                                     size = 8),
         legend.position = "none")
 ```
 
@@ -216,7 +217,9 @@ danosplot <- ggplot(daños)+
           geom_col(aes(x=reorder(daños$Especie_Final,
                                  daños$DAÑOTOTAL,
                                  decreasing = TRUE),
-                           y=daños$DAÑOTOTAL))+
+                           y=daños$DAÑOTOTAL,
+                       color=DAÑOTOTAL))+
+  scale_fill_viridis_b()+
   theme_few()+
   theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
@@ -235,259 +238,6 @@ indexbes <- faunabesito %>%
 unique(indexbes$Especie_Final)
 ```
 
-
-## Data Caja Verdes
-
-Por ahora solo trabajaremos con la data entregada por Candelaria Burgos para Chirla, que son los datos del año 2008 y 2009.
-
-```{r}
-cajas2009 <- c("Draga_01_2009.txt",
-           "Draga_02_2009.txt",
-           "Draga_03_2009.txt", 
-           "Draga_04_2009.txt" ,
-           "Draga_05_2008.txt" ,
-           "Draga_06_2008.txt",
-           "Draga_07_2008.txt" ,
-           "Draga_08_2008.txt",
-           "Draga_09_2008.txt" ,
-           "Draga_10_2008.txt",
-           "Draga_11_2008.txt" ,
-           "Draga_12_2008.txt")
-# caja1 <- read.table(here("DATOS",
-#                          "Cajas verdes chirla",
-#                          "Draga_2008_2009",
-#                          "Draga_01_2009.txt"), 
-#                      sep = ";",
-#                     header = TRUE)
-
-# Lista para almacenar los datos
-lista_datos <- list()
-# Ciclo for para leer cada archivo
-for (archivo in cajas2009) {
-  # Ruta completa del archivo
-  ruta <- here("DATOS", 
-               "Cajas verdes chirla",
-               "Draga_2008_2009", archivo)
-  # Leer el archivo y agregarlo a la lista
-  datos <- read.table(ruta, sep = ";", header = TRUE)
-  lista_datos[[archivo]] <- datos
-}
-```
-
-
-```{r}
-cajas2009uni <- do.call(rbind, 
-                        lista_datos)
-```
-Verifico la dimension de la base 
-```{r}
-dim(cajas2009uni)
-```
-
-calculo la cantidad de embarcaciones presentes en la BD
-
-```{r echo=TRUE}
-unique(cajas2009uni$MATRICULA)
-```
-
-cambio el formato de fechas:
-
-```{r}
-cajas2009uni$FECHA <- dmy(cajas2009uni$FECHA) 
-
-
-cajassep <- cajas2009uni %>%
-  mutate(ANO = year(FECHA),
-         MES = month(FECHA),
-         DIA = day(FECHA))
-
-```
-
-De forma simple compruenbo los meses y dias con actividad de los datos sin filtrar;
-
-
-```{r eval=FALSE}
-
-diahis <- ggplot()+
-  geom_histogram(aes(cajassep$DIA), 
-                     col=2,
-                     fill="white",
-                 binwidth = 1)+
-  theme_few()
-meshis <- ggplot()+
-  geom_histogram(aes(cajassep$MES), 
-                     col=3,
-                     fill="white",
-                 binwidth = 1)+
-  theme_few()
-velhis <- ggplot()+
-  geom_histogram(aes(cajassep$N_VELOCIDAD), 
-                     col=4,
-                     fill="white",
-                 binwidth = 0.1)+
-  theme_few()
-ggarrange(diahis, meshis, velhis, ncol=3)
-```
-
-Los métodos para la estimación y cartografiado del esfuerzo pesquero a partir de los datos de los VMS ya se han estudiado en varias pesquerías anteriormente. Estos estudios recomiendan un proceso en varios pasos según [@Cojan2012]: 
-
-1- Borrar los registros duplicados, 
-
-```{r}
-# Encontrar filas duplicadas
-filas_duplicadas <- duplicated(cajassep)
-# Mostrar las filas duplicadas
-datos_duplicados <- cajassep[filas_duplicadas, ]
-
-# Opcionalmente, para eliminar filas duplicadas manteniendo solo la última ocurrencia de cada fila duplicada:
-cajasfil <- cajassep[!duplicated(cajassep, 
-                                 fromLast = TRUE), ]
-```
-
-2- Borrar los registros en puertos. 
-
-```{r}
-cajasfilp <- cajasfil %>% 
-  filter(N_EN_PUERTO == 0)
-```
-
-
-```{r}
-velhis <- ggplot()+
-  geom_histogram(aes(cajasfilp$N_VELOCIDAD,
-                     fill=cajasfilp$N_VELOCIDAD < 1.5),
-                 binwidth = 0.02)+
-  scale_fill_viridis_d()+
-  theme(legend.position = "none")+
-  theme_few()
-velhis
-```
-
-3- Calcular el intervalo de tiempo entre registros sucesivos, 
-
-La idea es identificar los registros con tiempo efectivo de arrastre como lo muestra la Figura \ref{fig:esq};
-
-```{r esq, echo=FALSE, out.width = "100%", fig.align='center', fig.cap="\\label{esq}Umbrarl de definiciones para calculo de velocidad de arrantre"}
-knitr::include_graphics("FIG/umbralveloc.png")
-```
-De esta forma, a cada señal proporcionada por la caja verde se le asignó una actividad: pesca, maniobra o navegada. En la figura 8 se puede ver un histograma que representa el número de registros en función de la velocidad para los registros filtrados, en él se observa cómo han desaparecido los registros en puerto y que existen tres modas correspondientes a las actividades mencionadas, maniobras (M), pesca (P) y navegaciones (N). [@Cohan2012]
-
-Los registros en los cuales la velocidad del buque fue inferior a 1.5 nudos o entre 3.5 y 6 nudos, fueron considerados como maniobras de pesca (actividad "M"), tales como la virada y largada del arte o el reposicionamiento del buque precedente al arrastre.
-
-```{r}
-head(cajasfil)
-
-cajasfil2 <- cajasfil %>%
-  mutate(MANIOBRA = case_when(
-    N_VELOCIDAD >= 0 & N_VELOCIDAD < 1.5 ~ "M",
-    N_VELOCIDAD >= 1.5 & N_VELOCIDAD < 3.5 ~ "P",
-    N_VELOCIDAD >= 3.5 & N_VELOCIDAD < 6 ~ "M",
-    N_VELOCIDAD >= 6 & N_VELOCIDAD <= 10 ~ "N",
-    TRUE ~ NA_character_  # Por si acaso hay valores fuera de los rangos especificados
-  ))
-
-dim(cajasfil2)
-
-```
-
-
-
-4- Ahora calculo las distancias entre puntos. como??
-
-### Método 1
-
-```{r}
-# Función para calcular la distancia entre dos puntos
-calcular_distancia <- function(lat1, lon1, lat2, lon2) {
-  # Convertir grados a radianes
-  lat1_rad <- lat1 * pi / 180
-  lon1_rad <- lon1 * pi / 180
-  lat2_rad <- lat2 * pi / 180
-  lon2_rad <- lon2 * pi / 180
-  
-  # Radio de la Tierra en metros
-  radio_tierra <- 6371000
-  
-  # Calcular la distancia utilizando la fórmula del haversine
-  dlat <- lat2_rad - lat1_rad
-  dlon <- lon2_rad - lon1_rad
-  a <- sin(dlat / 2)^2 + cos(lat1_rad) * cos(lat2_rad) * sin(dlon / 2)^2
-  c <- 2 * atan2(sqrt(a), sqrt(1 - a))
-  distancia <- radio_tierra * c
-  
-  return(distancia)
-}
-
-datos <- cajasfil2
-# Convertir la columna de fecha y hora a un objeto POSIXct con lubridate
-datos$fecha_hora <- ymd_hms(paste(datos$FECHA, datos$HORA))
-
-# Ordenar el dataframe por fecha y hora
-datos <- datos %>% 
-  arrange(fecha_hora)
-# Calcular la distancia para cada fila del dataframe
-datos$distancia <- mapply(calcular_distancia,
-                          datos$N_LATITUD,
-                          datos$N_LONGITUD,
-                          lag(datos$N_LATITUD),
-                          lag(datos$N_LONGITUD))
-
-# La primera fila tendrá NA ya que no hay punto anterior
-datos$distancia[1] <- NA
-head(datos)
-```
-
-### Método 2
-Probar forma que indica Ana Magro, que es calcular tiempo de arrastre X Velocidad. La idea es calcular el tiempo entre registros dado por `fecha_hora`. Y multiplicamos por `N_VELOCIDAD`
-
-```{r}
-datosp <- datos %>% 
-  arrange(fecha_hora) %>% 
- mutate(diff = fecha_hora - lag(fecha_hora),
-         diff_secs = as.numeric(diff, units = 'secs'))
-```
-
-
-
-5- Diferenciar entre registros de pesca y no pesca basándose en la velocidad y solo dejó los registros `P`
-
-```{r}
-datos1 <- datosp %>% 
-  filter(MANIOBRA=="P")
-```
-
-
-ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las variables de velocidad en metros/seg. y tiempo recorrido por la rastra. filtro por distancia < 1000
-Calculo el SAR
-
-De acuerdo a @Church2016, el Cálculo de la Proporción del Área Barrida (Swept Area Ratio, SAR) `SA` es el área barrida (mts/2), `CA` es el área de la celda y `SAR` es la proporción del área barrida (equivalente al número de veces que la celda fue barrida).
-
-donde;
-
-$$
-SAr = \frac{SA}{CA}
-$$
-
-
-donde `SA`sera la distancia recorrida el arrastre y la apertura en metros del draga, es decir;
-
-$$
-SA = Distancia \times Apertura \ Draga
-$$
-
-
-```{r}
-datosfil <- datos1 %>% 
-  filter(distancia < 1000) %>% 
-  mutate(VELONUE = N_VELOCIDAD*0.51444, # de nudos a mts/seg
-        #DISTANCIA2 = diff_secs * VELONUE,
-        SA = distancia*2.5) %>% 
-  mutate(CELDAM2 = rep(857776),length.out = nrow(datosfil),
-         SAR= (SA/CELDAM2)*100)
-
-```
-
-Ahora se debe proceder a engrillar este dato en las celdas
 
 
 

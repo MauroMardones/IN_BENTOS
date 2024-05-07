@@ -133,6 +133,37 @@ habigilla <- sf_objeto_valido %>%
 
 habi3 <- st_join(grilla2, habigilla)
 ```
+
+ploteo grilla
+
+```{r warning=FALSE}
+grillado <- ggplot() +
+  #geom_sf(data = lito1, fill="white", color="blue") +
+  geom_sf(data = grilla2, 
+          fill=NA, 
+          color="red") +
+  geom_sf(data = costandalucia1, 
+          fill="#fee8c8") +
+  coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))+
+  # ggrepel::geom_label_repel(
+  #   data = zonapro1,
+  #   aes(label = ZONA, geometry = geometry),
+  #   stat = "sf_coordinates",
+  #   min.segment.length = ,
+  #   colour = "black",
+  #   size = 2,
+  #   segment.colour = "black",
+  #   box.padding = 0.7,
+  #   max.overlaps = 50) +
+  theme_few()+
+  xlim(-7.6,-6.3)+
+  ylim(36.65, 37.3)
+grillado
+```
+
+
 Priebo el mapa
 
 ```{r warning=FALSE}
