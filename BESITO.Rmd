@@ -101,7 +101,7 @@ cantes <- fauna %>%
                                      na.rm = TRUE),
             SUMPES = sum(`Peso total (g)...50`))
 
-indsum <- gEspecie_Finalindsum <- ggplot(cantes %>% 
+indsum <- ggplot(cantes %>% 
                    drop_na(Especie_Final))+
   geom_col(aes(x =Especie_Final, y= SUM, fill=Especie_Final))+
   theme_few()+
@@ -122,6 +122,28 @@ pessum <- ggplot(cantes %>%
                                      vjust = 0.5,
                                      size = 8),
         legend.position = "none")
+
+# Contar la frecuencia de cada especie
+couentesp <- fauna %>% 
+  group_by(Especie_Final) %>%
+  summarise(count = n())
+
+# Graficar
+coutesp <- ggplot(couentesp  %>% 
+                   drop_na(Especie_Final))+
+  geom_col(aes(x =reorder(Especie_Final, count,
+                          decresing=TRUE),
+               y= count, 
+               fill=Especie_Final))+
+  theme_few()+
+  theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5,
+                                     size = 8),
+        legend.position = "none")+
+  scale_fill_hue(h = c(0, 90))+
+  coord_polar()
+coutesp
 ```
 
 
@@ -229,6 +251,46 @@ danosplot <- ggplot(daños)+
 danosplot
 
 ```
+
+
+ahora proporcion del tipo de daño por especie
+
+```{r}
+dañopro <- faunabesito %>% 
+  group_by(Especie_Final) %>% 
+  summarise(DANO_0 = mean(`%D0`, na.rm=TRUE),
+            DANO_1 =mean(`%D1`, na.rm=TRUE),
+            DANO_2 = mean(`%D2`, na.rm=TRUE),
+            DANO_3 = mean(`%D3`, na.rm=TRUE),
+            DANO_T = mean(`%DT`, na.rm=TRUE)) %>% 
+  pivot_longer(!Especie_Final, names_to = "DANO", values_to = "PORCENTAJE") %>% 
+  ungroup()
+```
+
+ahora pivoteo para graficar
+
+
+
+```{r}
+danos <- ggplot(dañopro %>% 
+                  filter(DANO>0.1),
+                aes(x=Especie_Final,y=PORCENTAJE))+
+  geom_bar(stat='identity',position = position_stack(),
+                    fill="blue")+
+ facet_wrap(.~DANO, ncol=1)+
+   #scale_fill_viridis_b()+
+  theme_few()+
+  theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5,
+                                     size = 10))
+danos
+```
+
+
+ploteo
+
+
 
 Especies **Centinela**
 
