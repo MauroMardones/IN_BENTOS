@@ -351,4 +351,56 @@ habijoinmap2 <- ggplot() +
   ylim(36.6, 37.4)
 habijoinmap2
 ```
+## Granulometria
+
+```{r}
+Granu <- read_excel("DATOS/Granulometria.xlsx", 
+    sheet = "BRUTOS_GRADISTAT3", skip = 1)%>% 
+  select(1, 25 ) %>% 
+  rename("Estaciones"= "...1",
+         "Mean" = "MEAN:") %>% 
+  mutate(Estaciones = as.double(str_replace(Estaciones, 
+                                            "^E0*", ""))) %>% 
+  drop_na(Estaciones)
+
+Esta <- read_excel("DATOS/Datos_estaciones_ACUVEN_3D_IN-BENTO.xlsx", 
+    skip = 3)
+
+granuest <- merge(Granu, Esta, by ="Estaciones")
+
+```
+Join grilla
+
+```{r}
+granugri <- granuest %>% 
+  mutate(LONG2=LONG*-1) %>% 
+  st_as_sf(coords = c("LONG2", "LAT"),  
+                  crs = "+init=epsg:4326") 
+
+granogri2 <- st_join(grilla2, granugri)
+
+```
+Mapa 
+
+
+```{r warning=FALSE}
+granumap <- ggplot() +
+  geom_sf(data = granogri2,
+          aes(fill=Mean)) +
+  geom_sf(data = costandalucia1, fill="#fee8c8") +
+  # geom_sf(data = grilla2, 
+  #         fill=NA, 
+  #         color="red",
+  #         alpha=0.2) +
+  scale_fill_viridis_d(option="C",
+                       name= "GRANO")+
+  coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))+
+  theme_few()+
+  xlim(-7.6,-6)+
+  ylim(36.6, 37.4)
+granumap
+```
+```
 

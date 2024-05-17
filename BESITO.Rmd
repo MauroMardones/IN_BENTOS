@@ -271,24 +271,24 @@ ahora pivoteo para graficar
 
 
 
-```{r}
+```{r }
 danos <- ggplot(dañopro %>% 
                   filter(DANO>0.1),
-                aes(x=Especie_Final,y=PORCENTAJE))+
-  geom_bar(stat='identity',position = position_stack(),
-                    fill="blue")+
- facet_wrap(.~DANO, ncol=1)+
-   #scale_fill_viridis_b()+
+                aes(x=Especie_Final,y=PORCENTAJE,
+                    fill=DANO))+
+  geom_bar(stat='identity',position = position_stack())+
+ facet_wrap(.~DANO, ncol=5)+
+  scale_fill_viridis_d(option="magma")+
   theme_few()+
   theme(axis.text.x = element_text(angle = 90,
                                      hjust = 1,
                                      vjust = 0.5,
-                                     size = 10))
+                                     size = 8))+
+  coord_flip()
 danos
 ```
 
 
-ploteo
 
 
 
