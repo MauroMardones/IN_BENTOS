@@ -1,26 +1,25 @@
 ---
-title: "![](IEO-logo2.png){width=10cm}"
-output:
-  bookdown::pdf_document2:
-    includes:
-      before_body: titulo.sty
-    keep_tex: yes
-    number_sections: no
-    toc: true
-    toc_depth: 3
+title: "Methodological implementation of Swept Area Ratio (SAR) in the wedge clam fishery Chamelea galllina in the Gulf of Cádiz, Spain"
+subtitle: "Proyecto IN-BENTO (Desarrollo de bioindicadores para el seguimiento de los ecosistemas intermareal y submareal sometidos a explotación marisquera en el litoral de Huelva) (Consejería de Universidad, Investigación e Innovación de la Junta de Andalucía y el Gobierno de España. Financiado por la Unión Europea-NextGeneration EU. MRR)"
+author: "Magro, A., Mardones. M., Rodríguez-Rua, A., Román. S. and Delgado, M"
+date:  "`r format(Sys.time(), '%d %B, %Y')`"
 bibliography: INBENTO.bib
 csl: apa.csl
 link-citations: yes
 linkcolor: blue
-indent: no
-header-includes:
-- \usepackage{fancyhdr}
-- \pagestyle{fancy}
-- \fancyhf{}
-- \lfoot[\thepage]{}
-- \rfoot[]{\thepage}
-- \fontsize{12}{22}
-- \selectfont
+output:
+  html_document:
+    keep_md: true
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    theme: cosmo
+    fontsize: 0.9em
+    linestretch: 1.7
+    html-math-method: katex
+    self-contained: true
+    code-tools: true
 ---
 
 \newpage
@@ -28,9 +27,9 @@ header-includes:
 ```{r setup1, echo =FALSE}
 rm(list = ls())
 knitr::opts_chunk$set(message = FALSE,
-                      eval = FALSE,
+                      eval = TRUE,
                       warning = FALSE,
-                      echo=FALSE,
+                      echo=TRUE,
                       fig.align = 'center',
                       dev = 'jpeg',
                       dpi = 300, 
@@ -200,7 +199,7 @@ velhis
 
 La idea es identificar los registros con tiempo efectivo de arrastre como lo muestra la Figura \ref{fig:esq};
 
-```{r esq, echo=FALSE, out.width = "50%", fig.align='center', fig.cap="\\label{esq}Umbrarl de definiciones para calculo de velocidad de arrantre"}
+```{r esq, echo=TRUE, out.width = "50%", fig.align='center', fig.cap="\\label{esq}Umbrarl de definiciones para calculo de velocidad de arrantre"}
 knitr::include_graphics("FIG/umbralveloc.png")
 ```
 De esta forma, a cada señal proporcionada por la caja verde se le asignó una actividad: pesca, maniobra o navegada. En la figura 8 se puede ver un histograma que representa el número de registros en función de la velocidad para los registros filtrados, en él se observa cómo han desaparecido los registros en puerto y que existen tres modas correspondientes a las actividades mencionadas, maniobras (M), pesca (P) y navegaciones (N). [@Cohan2012]
@@ -353,7 +352,7 @@ Pero primero, debemos engrillar la data y luego calcular por cada celda
 Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Estos datos vectoriales fueron obtenidos desde la paina oficial de datos espaciales de la Junta de Andalucia [Shapesfile](https://portalrediam.cica.es/descargas?path=%2F08_AMBITOS_INTERES_AMBIENTAL%2F02_LITORAL_MARINO%2F04_SOCIOECONOMIA%2FZonasProduccionMoluscos)
 
 ## Leo Shapes y transformo a la proyección correcta.
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 costandalucia <- st_read(here("SHP_Chirla",
                               "costa_proyectada.shp"))
 grilla <- st_read(here("SHP_Chirla",

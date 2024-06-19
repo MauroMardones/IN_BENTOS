@@ -28,7 +28,7 @@ header-includes:
 ```{r setup1, echo =FALSE}
 rm(list = ls())
 knitr::opts_chunk$set(message = FALSE,
-                      eval = FALSE,
+                      eval = TRUE,
                       warning = FALSE,
                       echo=FALSE,
                       fig.align = 'center',
@@ -392,7 +392,7 @@ granumap <- ggplot() +
   #         fill=NA, 
   #         color="red",
   #         alpha=0.2) +
-  scale_fill_viridis_d(option="C",
+  scale_fill_viridis_d(option="D",
                        name= "GRANO")+
   coord_sf() +
   xlab(expression(paste(Longitude^o,~'O'))) +

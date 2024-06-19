@@ -1,0 +1,234 @@
+---
+title: "Untitled"
+author: "Mauricio Mardones I."
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r}
+knitr::purl(documentation = 2)
+```
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(tidyr)
+library(vegan)
+
+# Example data frame
+# Replace this with your actual data
+df <- data.frame(
+  Estacion = sample(1:10, 100, replace = TRUE),
+  Indice = runif(100, 1, 5),
+  Especie = sample(letters, 100, replace = TRUE),
+  Nivel_de_Presion_Pesquera = sample(c('no pressure', 'low pressure', 'medium pressure', 'high pressure'), 100, replace = TRUE)
+)
+
+# Step 1: Define reference conditions
+reference_samples <- df %>% filter(Nivel_de_Presion_Pesquera == 'no pressure')
+if (nrow(reference_samples) < 2) {
+  reference_samples <- df %>% filter(Nivel_de_Presion_Pesquera %in% c('no pressure', 'low pressure'))
+}
+
+# Ensure reference_samples has unique stations
+reference_samples <- reference_samples %>%
+  group_by(Estacion, Especie) %>%
+  summarise(Abundance = n(), .groups = 'drop')
+
+# Create a community matrix for SIMPER analysis
+community_matrix <- reference_samples %>%
+  pivot_wider(names_from = Especie, values_from = Abundance, values_fill = list(Abundance = 0))
+
+# Convert to matrix and set row names
+community_matrix <- as.data.frame(community_matrix)
+rownames(community_matrix) <- community_matrix$Estacion
+community_matrix <- community_matrix[ , !(names(community_matrix) %in% 'Estacion')]
+
+# Ensure the grouping vector is consistent with community matrix
+group_vector <- reference_samples %>%
+  distinct(Estacion) %>%
+  pull(Estacion)
+
+# Check if the row names of community_matrix match the group_vector
+if (!all(rownames(community_matrix) %in% group_vector)) {
+  stop("Mismatch between community matrix rows and grouping vector")
+}
+
+# Step 2: Compute 'typical species set'
+species_occurrence <- reference_samples %>%
+  group_by(Especie) %>%
+  summarise(Frequency = n(), .groups = 'drop')
+
+total_samples <- n_distinct(reference_samples$Estacion)
+
+typical_species_set <- species_occurrence %>%
+  filter(Frequency >= 0.1 * total_samples)
+
+# Step 3: Generate 'sentinel species set' with highest sensitivity index
+# Assuming 'Indice' is the SoS sensitivity index
+simper_results <- simper(community_matrix, group = group_vector)
+
+# Check if simper_results contains valid data
+if (length(simper_results) == 0 || all(sapply(simper_results, function(x) length(x$average) == 0))) {
+  stop("No valid SIMPER results to process")
+}
+
+# Extract species from SIMPER results
+simper_species <- lapply(simper_results, function(res) {
+  if (is.null(res$average) || length(res$average) == 0 || length(rownames(res)) == 0) {
+    return(NULL)
+  }
+  if (length(res$average) != length(rownames(res))) {
+    warning("Mismatch in length of rownames and res$average, skipping this result")
+    return(NULL)
+  }
+  data.frame(Especie = rownames(res), Contribution = res$average)
+}) %>%
+  bind_rows()
+
+# Check if simper_species is empty after bind_rows
+if (nrow(simper_species) == 0) {
+  stop("No valid SIMPER species to process")
+}
+
+# Summarize contributions
+simper_species <- simper_species %>%
+  group_by(Especie) %>%
+  summarise(Contribution = mean(Contribution, na.rm = TRUE)) %>%
+  arrange(desc(Contribution))
+
+# Top species from SIMPER analysis
+top_simper_species <- simper_species$Especie[1:10]
+
+# Filter and arrange sentinel species set
+sentinel_species_set <- typical_species_set %>%
+  filter(Especie %in% top_simper_species) %>%
+  arrange(desc(Frequency))
+
+if (nrow(sentinel_species_set) < 10) {
+  additional_species <- typical_species_set %>%
+    filter(!Especie %in% sentinel_species_set$Especie) %>%
+    arrange(desc(Frequency)) %>%
+    head(10 - nrow(sentinel_species_set))
+  
+  sentinel_species_set <- bind_rows(sentinel_species_set, additional_species)
+}
+
+# Print final sentinel species set
+print(sentinel_species_set)
+```
+
+
+
+```{r}
+# Function to calculate similarity contributions using SIMPER
+calculate_simper <- function(dbg, cutoff = 90) {
+  take <- t(combn(1:nrow(dbg), 2))
+  contr <- sapply(1:nrow(take), function(j) {
+    md <- 2 * pmin(dbg[take[j, 1], ], dbg[take[j, 2], ])
+    me <- dbg[take[j, 1], ] + dbg[take[j, 2], ]
+    100 * md / sum(me)
+  })
+  
+  contr <- t(contr)
+  colnames(contr) <- colnames(dbg)
+  z2 <- data.frame(Species = colnames(dbg),
+                   Similarity = colMeans(contr),
+                   SD = apply(contr, 2, sd))
+  z2 <- z2[order(z2$Similarity, decreasing = TRUE),]
+  z2$contribution <- 100 * z2$Similarity / sum(z2$Similarity)
+  z2$acum <- cumsum(z2$contribution)
+  z2$acum[1] <- ifelse(z2$acum[1] > 90, 90, z2$acum[1])
+  z2 <- z2[z2$acum <= cutoff & z2$contribution > 0,]
+  
+  return(z2)
+}
+
+# Function to calculate frequencies and percentages
+calculate_frequencies <- function(sp_data, group_vect) {
+  low_effort_data <- sp_data[group_vect == "1",]
+  freq <- colSums(low_effort_data > 0)
+  per <- 100 * freq / nrow(low_effort_data)
+  threshold <- max(2, round(length(group_vect[group_vect == "1"]) / 10))
+  freq_matrix <- data.frame(Species = colnames(sp_data),
+                            Freq = freq,
+                            Per = per)
+  freq_matrix <- freq_matrix[freq_matrix$Freq >= threshold,]
+  return(freq_matrix)
+}
+
+# Function to merge and sort frequency data with BESITO
+merge_with_besito <- function(freq_matrix, besito) {
+  merged <- merge(freq_matrix, besito, by = "Species")
+  merged <- merged[order(merged$Freq, decreasing = TRUE),]
+  return(merged)
+}
+
+# Main function to get sentinel species
+TS_species <- function(sp_data, group_vect, besito, table) {
+  table_list <- list()
+  group <- unique(as.character(group_vect))
+  
+  for (g in group) {
+    dbg <- na.omit(sp_data[group_vect == g, ])
+    simper_result <- calculate_simper(dbg)
+    abundance_mean <- colMeans(dbg)
+    abundance_sd <- apply(dbg, 2, sd)
+    abundance_data <- data.frame(Species = colnames(dbg),
+                                 Av.Abund = round(abundance_mean, 2),
+                                 SD.Abund = round(abundance_sd, 2))
+    result <- merge(abundance_data, simper_result, by = "Species")
+    result <- result[order(result$Similarity, decreasing = TRUE),]
+    result$Group <- g
+    table_list[[g]] <- result
+  }
+  
+  table_final <- do.call(rbind, table_list)
+  sp_group1 <- table_final[table_final$Group == "1", "Species"]
+  besito_simper <- unique(besito[besito$Species %in% sp_group1, ])
+  
+  freq_matrix <- calculate_frequencies(sp_data, group_vect)
+  freq_matrix_with_besito <- merge_with_besito(freq_matrix, besito)
+  
+  sensitivity_levels <- 5:2
+  for (level in sensitivity_levels) {
+    simper_species <- besito_simper[besito_simper$BESITO == level, "Species"]
+    freq_species <- freq_matrix_with_besito[freq_matrix_with_besito$BESITO == level, "Species"]
+    combined_species <- unique(c(simper_species, freq_species))
+    
+    if (length(combined_species) >= 10) {
+      return(combined_species[1:10])
+    }
+  }
+  
+  warning("Careful: Loop finished without reaching the minimum level of species")
+  return(unique(c(simper_species, freq_species)))
+}
+
+```
+
