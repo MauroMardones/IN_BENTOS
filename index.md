@@ -1,8 +1,8 @@
 ---
 title: "Methodological implementation of Swept Area Ratio (SAR) in the wedge clam fishery Chamelea galllina in the Gulf of Cádiz, Spain"
-subtitle: "Insumo Modelo de evaluación de stock de dinámica poblacional del Krill (Euphausia superba)"
+subtitle: "Proyecto IN-BENTO (Desarrollo de bioindicadores para el seguimiento de los ecosistemas intermareal y submareal sometidos a explotación marisquera en el litoral de Huelva) (Consejería de Universidad, Investigación e Innovación de la Junta de Andalucía y el Gobierno de España. Financiado por la Unión Europea-NextGeneration EU. MRR)"
 author: "Magro, A., Mardones. M., Rodríguez-Rua, A., Román. S. and Delgado, M"
-date:  "24 April, 2024"
+date:  "15 July, 2024"
 bibliography: INBENTO.bib
 csl: apa.csl
 link-citations: yes
@@ -20,7 +20,31 @@ output:
     html-math-method: katex
     self-contained: true
     code-tools: true
+# title: "![](IEO-logo2.png){width=10cm}"
+# output:
+#   bookdown::pdf_document2:
+#     includes:
+#       before_body: titulo.sty
+#     keep_tex: yes
+#     number_sections: no
+#     toc: true
+#     toc_depth: 3
+# bibliography: INBENTO.bib
+# csl: apa.csl
+# link-citations: yes
+# linkcolor: blue
+# indent: no
+# header-includes:
+# - \usepackage{fancyhdr}
+# - \pagestyle{fancy}
+# - \fancyhf{}
+# - \lfoot[\thepage]{}
+# - \rfoot[]{\thepage}
+# - \fontsize{12}{22}
+# - \selectfont
 ---
+
+\newpage
 
 
 
@@ -218,6 +242,11 @@ velhis
 3- Calcular el intervalo de tiempo entre registros sucesivos, 
 
 La idea es identificar los registros con tiempo efectivo de arrastre como lo muestra la Figura \ref{fig:esq};
+
+
+```r
+knitr::include_graphics("FIG/umbralveloc.png")
+```
 
 <div class="figure" style="text-align: center">
 <img src="FIG/umbralveloc.png" alt="\label{esq}Umbrarl de definiciones para calculo de velocidad de arrantre" width="50%" />
@@ -455,6 +484,11 @@ Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Est
 
 ## Leo Shapes y transformo a la proyección correcta.
 
+```r
+costandalucia <- st_read(here("SHP_Chirla",
+                              "costa_proyectada.shp"))
+```
+
 ```
 ## Reading layer `costa_proyectada' from data source 
 ##   `/Users/mauriciomardones/IEO/IN_BENTOS/SHP_Chirla/costa_proyectada.shp' 
@@ -464,6 +498,11 @@ Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Est
 ## Dimension:     XY
 ## Bounding box:  xmin: -34115.27 ymin: 3891271 xmax: 301588.8 ymax: 4173659
 ## Projected CRS: WGS_1984_Complex_UTM_Zone_30N
+```
+
+```r
+grilla <- st_read(here("SHP_Chirla",
+                              "cuadriculas_definitivo.shp"))
 ```
 
 ```
@@ -477,6 +516,11 @@ Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Est
 ## Projected CRS: ETRS89 / UTM zone 30N
 ```
 
+```r
+bati <- st_read(here("SHP_Chirla",
+                     "batimetria_rediam20x20_10m_id.shp"))
+```
+
 ```
 ## Reading layer `batimetria_rediam20x20_10m_id' from data source 
 ##   `/Users/mauriciomardones/IEO/IN_BENTOS/SHP_Chirla/batimetria_rediam20x20_10m_id.shp' 
@@ -488,16 +532,26 @@ Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Est
 ## Projected CRS: ETRS89 / UTM zone 30N
 ```
 
+```r
+habitat <- st_read(here("SHP_Chirla",
+                     "Habitats_region_IV.shp"))
+```
+
 ```
 ## Reading layer `Habitats_region_IV' from data source 
 ##   `/Users/mauriciomardones/IEO/IN_BENTOS/SHP_Chirla/Habitats_region_IV.shp' 
 ##   using driver `ESRI Shapefile'
 ## Simple feature collection with 70739 features and 21 fields
 ## Geometry type: MULTIPOLYGON
-## Dimension:     XYZ
+## Dimension:     XY, XYZ
 ## Bounding box:  xmin: -1543382 ymin: 4300621 xmax: -114914.2 ymax: 6106855
 ## z_range:       zmin: 0 zmax: 0
 ## Projected CRS: WGS 84 / Pseudo-Mercator
+```
+
+```r
+demarca <- st_read("SHP_Chirla",
+                   "Demarcaciones_Marinas_WGS84_2018")
 ```
 
 ```
@@ -508,6 +562,22 @@ Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Est
 ## Dimension:     XY
 ## Bounding box:  xmin: -21.90544 ymin: 24.59355 xmax: 6.3 ymax: 46.86761
 ## Geodetic CRS:  WGS 84
+```
+
+```r
+# Transformo a objetos sf con la crs correcta
+grilla1 <- st_transform(grilla, 
+                        "+init=epsg:4326")
+costandalucia1 <- st_transform(costandalucia,
+                               "+init=epsg:4326")
+bati1 <- st_transform(bati,
+                      "+init=epsg:4326")
+
+habi1 <- st_transform(habitat,
+                      "+init=epsg:4326")
+
+dema1 <- st_transform(demarca,
+                      "+init=epsg:4326")
 ```
 
 
@@ -612,90 +682,6 @@ masrend
 
 <img src="index_files/figure-html/unnamed-chunk-18-1.jpeg" style="display: block; margin: auto;" />
 
-Ahora trato de engrillar los habitat
-
-```r
-# # Clean the input data by removing duplicate vertices and making the object topologically valid
-sf_objeto_valido <- st_make_valid(habi1)
-# 
- # Corto la grilla dentro de las SSMU
-
-habigilla <- sf_objeto_valido %>% 
-  select(c(11,22)) %>% 
-  filter(MSFD_BBHT != "Na") %>% 
-  filter(MSFD_BBHT %in% c("Circalittoral sand",
-                                    "Infralittoral sand" ,
-                                    "Circalittoral coarse sediment",
-                                    "Infralittoral coarse sediment" ,
-                                    "Infralittoral rock and biogenic reef",
-                                    "Circalittoral rock and biogenic reef",
-                                    "Circalittoral mud",
-                                    "Infralittoral mud"))
-
-
-habi3 <- st_join(grilla2, habigilla)
-```
-Priebo el mapa
-
-
-```r
-mas <- ggplot() +
-  geom_sf(data = habi1 %>% 
-            filter(MSFD_BBHT %in% c("Circalittoral sand",
-                                    "Infralittoral sand" ,
-                                    "Circalittoral coarse sediment",
-                                    "Infralittoral coarse sediment" ,
-                                    "Infralittoral rock and biogenic reef",
-                                    "Circalittoral rock and biogenic reef",
-                                    "Circalittoral mud",
-                                    "Infralittoral mud")),
-          aes(fill=MSFD_BBHT)) +
-  geom_sf(data = habi3 %>% 
-            drop_na(MSFD_BBHT),
-          aes(fill=MSFD_BBHT)) +
-  geom_sf(data = costandalucia1, fill="#fee8c8") +
-  #geom_sf(data = bati1, fill="white", color="blue") +
-  # geom_sf(data = fisicomar1, alpha=0.1,
-  #         linetype=5) +
-  scale_fill_viridis_d(option="A")+
-  coord_sf() +
-  xlab(expression(paste(Longitude^o,~'O'))) +
-  ylab(expression(paste(Latitude^o,~'S')))+
-  # ggrepel::geom_label_repel(
-  #    data = habi3 %>% 
-  #           filter(MSFD_BBHT %in% c("Circalittoral sand",
-  #                                   "Infralittoral sand" ,
-  #                                   "Circalittoral coarse sediment",
-  #                                   "Infralittoral coarse sediment" ,
-  #                                   "Infralittoral rock and biogenic reef",
-  #                                   "Circalittoral rock and biogenic reef",
-  #                                   "Circalittoral mud",
-  #                                   "Infralittoral mud")),
-  #    aes(label = MSFD_BBHT,
-  #        geometry = geometry),
-  #    stat = "sf_coordinates",
-  #    min.segment.length = ,
-  #    colour = "black",
-  #    size = 2,
-  #    segment.colour = "black",
-  #    box.padding = 0.7,
-  #    max.overlaps = 50,
-  #    max_time = 0.5) +
-  theme_few()+
-  #theme(legend.position = "none")+
-  xlim(-7.6,-6)+
-  ylim(36.6, 37.4)
-mas
-```
-
-<img src="index_files/figure-html/unnamed-chunk-20-1.jpeg" style="display: block; margin: auto;" />
-Cuento cuantas estaciones hay por habitat.
-
-```r
-estahib <- habi3 %>% 
-  group_by(habi3$MSFD_BBHT) %>% 
-  summarise(NESTAC = n())
-```
 
 ## Calculo de lances por estacion o por habitat 
 
@@ -761,6 +747,7 @@ sumest <- idlance5 %>%
   group_by(Estaciones,MATRICULA) %>% 
   summarise(num_lances = n_distinct(ID_Lance, na.rm = TRUE))
 ```
+
 
 
 \newpage

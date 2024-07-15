@@ -20,13 +20,38 @@ output:
     html-math-method: katex
     self-contained: true
     code-tools: true
+# title: "![](IEO-logo2.png){width=10cm}"
+# output:
+#   bookdown::pdf_document2:
+#     includes:
+#       before_body: titulo.sty
+#     keep_tex: yes
+#     number_sections: no
+#     toc: true
+#     toc_depth: 3
+# bibliography: INBENTO.bib
+# csl: apa.csl
+# link-citations: yes
+# linkcolor: blue
+# indent: no
+# header-includes:
+# - \usepackage{fancyhdr}
+# - \pagestyle{fancy}
+# - \fancyhf{}
+# - \lfoot[\thepage]{}
+# - \rfoot[]{\thepage}
+# - \fontsize{12}{22}
+# - \selectfont
 ---
 
+\newpage
 
 ```{r setup1, echo =FALSE}
 rm(list = ls())
 knitr::opts_chunk$set(message = FALSE,
+                      eval = TRUE,
                       warning = FALSE,
+                      echo=TRUE,
                       fig.align = 'center',
                       dev = 'jpeg',
                       dpi = 300, 
@@ -55,7 +80,7 @@ library(sp)
 library(sf)
 ```
 
-## ABSTRACT
+# ABSTRACT
 
 This abstract presents a method to calculate the SAR (Swept Area Ratio) using satellite data from a fleet of nearly 100 vessels in the artisanal fishing of Chirla in the Gulf of Cadiz. Artisanal fisheries, like Chirla fishing, often lack comprehensive data, hampering effective management. Leveraging satellite imagery, particularly through green boxes technology, offers a unique advantage by providing real-time spatial information on fishing activity. With this method, we can continuously identify the fleet's effort in both spatial and temporal terms. The objective is to develop an ad hoc approach reproducible through accessible codes and open data, facilitating sustainable fisheries management in the Gulf of Cadiz and beyond.
 
@@ -196,7 +221,7 @@ velhis
 
 La idea es identificar los registros con tiempo efectivo de arrastre como lo muestra la Figura \ref{fig:esq};
 
-```{r esq, echo=FALSE, out.width = "50%", fig.align='center', fig.cap="\\label{esq}Umbrarl de definiciones para calculo de velocidad de arrantre"}
+```{r esq, echo=TRUE, out.width = "50%", fig.align='center', fig.cap="\\label{esq}Umbrarl de definiciones para calculo de velocidad de arrantre"}
 knitr::include_graphics("FIG/umbralveloc.png")
 ```
 De esta forma, a cada señal proporcionada por la caja verde se le asignó una actividad: pesca, maniobra o navegada. En la figura 8 se puede ver un histograma que representa el número de registros en función de la velocidad para los registros filtrados, en él se observa cómo han desaparecido los registros en puerto y que existen tres modas correspondientes a las actividades mencionadas, maniobras (M), pesca (P) y navegaciones (N). [@Cohan2012]
@@ -349,7 +374,7 @@ Pero primero, debemos engrillar la data y luego calcular por cada celda
 Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Estos datos vectoriales fueron obtenidos desde la paina oficial de datos espaciales de la Junta de Andalucia [Shapesfile](https://portalrediam.cica.es/descargas?path=%2F08_AMBITOS_INTERES_AMBIENTAL%2F02_LITORAL_MARINO%2F04_SOCIOECONOMIA%2FZonasProduccionMoluscos)
 
 ## Leo Shapes y transformo a la proyección correcta.
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 costandalucia <- st_read(here("SHP_Chirla",
                               "costa_proyectada.shp"))
 grilla <- st_read(here("SHP_Chirla",
@@ -471,87 +496,6 @@ masrend <- ggplot() +
 masrend
 ```
 
-Ahora trato de engrillar los habitat
-```{r}
-# # Clean the input data by removing duplicate vertices and making the object topologically valid
-sf_objeto_valido <- st_make_valid(habi1)
-# 
- # Corto la grilla dentro de las SSMU
-
-habigilla <- sf_objeto_valido %>% 
-  select(c(11,22)) %>% 
-  filter(MSFD_BBHT != "Na") %>% 
-  filter(MSFD_BBHT %in% c("Circalittoral sand",
-                                    "Infralittoral sand" ,
-                                    "Circalittoral coarse sediment",
-                                    "Infralittoral coarse sediment" ,
-                                    "Infralittoral rock and biogenic reef",
-                                    "Circalittoral rock and biogenic reef",
-                                    "Circalittoral mud",
-                                    "Infralittoral mud"))
-
-
-habi3 <- st_join(grilla2, habigilla)
-
-
-```
-Priebo el mapa
-
-```{r warning=FALSE}
-mas <- ggplot() +
-  geom_sf(data = habi1 %>% 
-            filter(MSFD_BBHT %in% c("Circalittoral sand",
-                                    "Infralittoral sand" ,
-                                    "Circalittoral coarse sediment",
-                                    "Infralittoral coarse sediment" ,
-                                    "Infralittoral rock and biogenic reef",
-                                    "Circalittoral rock and biogenic reef",
-                                    "Circalittoral mud",
-                                    "Infralittoral mud")),
-          aes(fill=MSFD_BBHT)) +
-  geom_sf(data = habi3 %>% 
-            drop_na(MSFD_BBHT),
-          aes(fill=MSFD_BBHT)) +
-  geom_sf(data = costandalucia1, fill="#fee8c8") +
-  #geom_sf(data = bati1, fill="white", color="blue") +
-  # geom_sf(data = fisicomar1, alpha=0.1,
-  #         linetype=5) +
-  scale_fill_viridis_d(option="A")+
-  coord_sf() +
-  xlab(expression(paste(Longitude^o,~'O'))) +
-  ylab(expression(paste(Latitude^o,~'S')))+
-  # ggrepel::geom_label_repel(
-  #    data = habi3 %>% 
-  #           filter(MSFD_BBHT %in% c("Circalittoral sand",
-  #                                   "Infralittoral sand" ,
-  #                                   "Circalittoral coarse sediment",
-  #                                   "Infralittoral coarse sediment" ,
-  #                                   "Infralittoral rock and biogenic reef",
-  #                                   "Circalittoral rock and biogenic reef",
-  #                                   "Circalittoral mud",
-  #                                   "Infralittoral mud")),
-  #    aes(label = MSFD_BBHT,
-  #        geometry = geometry),
-  #    stat = "sf_coordinates",
-  #    min.segment.length = ,
-  #    colour = "black",
-  #    size = 2,
-  #    segment.colour = "black",
-  #    box.padding = 0.7,
-  #    max.overlaps = 50,
-  #    max_time = 0.5) +
-  theme_few()+
-  #theme(legend.position = "none")+
-  xlim(-7.6,-6)+
-  ylim(36.6, 37.4)
-mas
-```
-Cuento cuantas estaciones hay por habitat.
-```{r}
-estahib <- habi3 %>% 
-  group_by(habi3$MSFD_BBHT) %>% 
-  summarise(NESTAC = n())
-```
 
 ## Calculo de lances por estacion o por habitat 
 
@@ -592,11 +536,6 @@ sumest <- idlance5 %>%
 ```
 
 
-\newpage
-
-# Other tools
-
-[SAR_Methods](SAR_Method.html)
 
 \newpage
 
