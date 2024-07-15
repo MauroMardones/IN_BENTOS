@@ -2,7 +2,7 @@
 title: "Methodological implementation of Swept Area Ratio (SAR) in the wedge clam fishery Chamelea galllina in the Gulf of Cádiz, Spain"
 subtitle: "Proyecto IN-BENTO (Desarrollo de bioindicadores para el seguimiento de los ecosistemas intermareal y submareal sometidos a explotación marisquera en el litoral de Huelva) (Consejería de Universidad, Investigación e Innovación de la Junta de Andalucía y el Gobierno de España. Financiado por la Unión Europea-NextGeneration EU. MRR)"
 author: "Magro, A., Mardones. M., Rodríguez-Rua, A., Román. S. and Delgado, M"
-date:  "19 June, 2024"
+date:  "15 July, 2024"
 bibliography: INBENTO.bib
 csl: apa.csl
 link-citations: yes
@@ -20,6 +20,28 @@ output:
     html-math-method: katex
     self-contained: true
     code-tools: true
+# title: "![](IEO-logo2.png){width=10cm}"
+# output:
+#   bookdown::pdf_document2:
+#     includes:
+#       before_body: titulo.sty
+#     keep_tex: yes
+#     number_sections: no
+#     toc: true
+#     toc_depth: 3
+# bibliography: INBENTO.bib
+# csl: apa.csl
+# link-citations: yes
+# linkcolor: blue
+# indent: no
+# header-includes:
+# - \usepackage{fancyhdr}
+# - \pagestyle{fancy}
+# - \fancyhf{}
+# - \lfoot[\thepage]{}
+# - \rfoot[]{\thepage}
+# - \fontsize{12}{22}
+# - \selectfont
 ---
 
 \newpage

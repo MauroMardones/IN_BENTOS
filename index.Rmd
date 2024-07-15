@@ -594,4 +594,10 @@ sumest <- idlance5 %>%
 
 \newpage
 
+# Other tools
+
+[SAR_Methods](SAR_Method.html)
+
+\newpage
+
 # REFERENCIAS

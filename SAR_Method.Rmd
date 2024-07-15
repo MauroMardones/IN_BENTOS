@@ -20,6 +20,28 @@ output:
     html-math-method: katex
     self-contained: true
     code-tools: true
+# title: "![](IEO-logo2.png){width=10cm}"
+# output:
+#   bookdown::pdf_document2:
+#     includes:
+#       before_body: titulo.sty
+#     keep_tex: yes
+#     number_sections: no
+#     toc: true
+#     toc_depth: 3
+# bibliography: INBENTO.bib
+# csl: apa.csl
+# link-citations: yes
+# linkcolor: blue
+# indent: no
+# header-includes:
+# - \usepackage{fancyhdr}
+# - \pagestyle{fancy}
+# - \fancyhf{}
+# - \lfoot[\thepage]{}
+# - \rfoot[]{\thepage}
+# - \fontsize{12}{22}
+# - \selectfont
 ---
 
 \newpage
