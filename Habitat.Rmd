@@ -226,8 +226,6 @@ estahib <- habi3 %>%
          "Nº Estaciones" = "NESTAC") %>% 
   as.data.frame() %>% 
   select(c(1,2))
-
-
 kbl(estahib)
 ```
 
