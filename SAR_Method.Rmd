@@ -214,7 +214,18 @@ velhis <- ggplot()+
   scale_fill_viridis_d()+
   theme_few()+
   theme(legend.position = "none")
-velhis
+
+# no filtrado 
+nfhis <- ggplot()+
+  geom_histogram(aes(cajasfil$N_VELOCIDAD,
+                     fill=cajasfil$N_VELOCIDAD < 1.5),
+                 binwidth = 0.02)+
+  scale_fill_viridis_d()+
+  theme_few()+
+  theme(legend.position = "none")
+ggarrange(nfhis,
+          velhis,
+          ncol=2)
 ```
 
 3- Calcular el intervalo de tiempo entre registros sucesivos, 
@@ -229,9 +240,7 @@ De esta forma, a cada señal proporcionada por la caja verde se le asignó una a
 Los registros en los cuales la velocidad del buque fue inferior a 1.5 nudos o entre 3.5 y 6 nudos, fueron considerados como maniobras de pesca (actividad "M"), tales como la virada y largada del arte o el reposicionamiento del buque precedente al arrastre.
 
 ```{r}
-head(cajasfil)
-
-cajasfil2 <- cajasfil %>%
+cajasfil2 <- cajasfilp %>%
   mutate(MANIOBRA = case_when(
     N_VELOCIDAD >= 0 & N_VELOCIDAD < 1.5 ~ "M",
     N_VELOCIDAD >= 1.5 & N_VELOCIDAD < 3.5 ~ "P",
@@ -299,8 +308,6 @@ datosp <- datos %>%
          diff_secs = as.numeric(diff, units = 'secs'))
 ```
 
-
-
 5- Diferenciar entre registros de pesca y no pesca basándose en la velocidad y solo dejó los registros `P`
 
 ```{r}
@@ -314,8 +321,10 @@ ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las va
 datosfil <- datos1 %>% 
   filter(DISTANCIA < 5000) %>% 
   mutate(VELONUE = N_VELOCIDAD*0.51444, # de nudos a mts/seg
+         TIEMPO = DISTANCIA/VELONUE, # Tiempo en  relacion a var DISTANCA
         DISTANCIA2 = diff_secs * VELONUE, # por ahora no ocuparé el Metodo 2
-        SA = DISTANCIA*2.5) # cDato de anchura draga chirla MD y LS
+        SA = DISTANCIA*2.5, # cDato de anchura draga chirla MD y LS
+        SA2 = DISTANCIA2*2.5)
         
 ```
 
@@ -350,9 +359,55 @@ plotdi <- ggplot(datosfil %>%
   xlab("Matriculas") +
   ylab(expression(paste(Distancia (m))))
 
+# Dist 2
+
+plotdi2 <- ggplot(datosfil %>% 
+               group_by(MATRICULA))+
+  geom_boxplot(aes(x = reorder(MATRICULA, DISTANCIA2), 
+                   y = DISTANCIA2),
+               outliers = FALSE)+
+  theme_few()+
+  theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5,
+                                     size = 5))+
+  xlab("Matriculas") +
+  ylab(expression(paste(Distancia2 (m))))
+```
+
+Ploteo las variables
+
+```{r}
 ggarrange(plotvel, plotdi, 
+          plotdi2,
           ncol =1)
 ```
+```{r}
+
+scpdist1<- ggplot(datosfil)+
+  geom_point(aes(x = TIEMPO, 
+                   y = DISTANCIA))+
+  theme_few()+
+  theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5,
+                                     size = 5))
+
+
+scpdist2<- ggplot(datosfil %>% 
+                    filter(DISTANCIA2 < 100))+
+  geom_point(aes(x = diff_secs, 
+                   y = DISTANCIA2))+
+  geom_smooth(method = "loess")+
+  theme_few()+
+  theme(axis.text.x = element_text(angle = 90,
+                                     hjust = 1,
+                                     vjust = 0.5,
+                                     size = 5))
+  
+```
+
+
 Calculo el SAR
 
 De acuerdo a @Church2016, el cálculo de la Razón del Área Barrida (Swept Area Ratio, SAR) `SA` es el área barrida (mts/2), `CA` es el área de la celda y `SAR` es la proporción del área barrida (equivalente al número de veces que la celda fue barrida).
@@ -430,7 +485,8 @@ sabd <- datosfil %>%
                   crs = "+init=epsg:4326") %>% 
   mutate(CELDAM2 = rep(857476),
          length.out = nrow(datosfil),
-         SAR= (SA/CELDAM2)*100)
+         SAR= (SA/CELDAM2)*100,
+         SAR2 =(SA2/CELDAM2)*100)
 ```
 
 This grid has the same characteristics as the environmental data grids
