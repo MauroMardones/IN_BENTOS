@@ -93,6 +93,8 @@ Making better use of tracking data can reveal the spatiotemporal and intraspecif
 
 ## DATA SATELITAL VESSEL
 
+### Data de prueba 2009
+
 Por ahora solo trabajaremos con la data entregada por Candelaria Burgos para Chirla, que son los datos del año 2008 y 2009.
 
 ```{r}
@@ -129,18 +131,7 @@ for (archivo in cajas2009) {
 }
 ```
 
-Datos 2018 al 2024
 
-```{r}
-CV_2018 <- read_csv2(here("DATOS/Cajas verdes chirla/Dragas_2018_2024/EXPORT_DRAGAS_2018.csv", 
-                     locale = locale(encoding = "ISO-8859-1")))
-CV_2019 <- read_csv2("DATOS/Cajas verdes chirla/Dragas_2018_2024/EXPORT_DRAGAS_2019.csv", 
-                     locale = locale(encoding = "ISO-8859-1"))
-# y uno la Base
-CV_18_19 <- rbind(CV_2018,
-                  CV_2019)
-
-```
 
 ```{r}
 #Uno y verifico dimension
@@ -603,7 +594,57 @@ sumest <- idlance5 %>%
   summarise(num_lances = n_distinct(ID_Lance, na.rm = TRUE))
 ```
 
+### Data 2018 y 2019
 
+
+```{r}
+CV_2018 <- read_csv2(here("DATOS/Cajas verdes chirla/Dragas_2018_2024/EXPORT_DRAGAS_2018.csv", 
+                     locale = locale(encoding = "ISO-8859-1")))
+CV_2019 <- read_csv2("DATOS/Cajas verdes chirla/Dragas_2018_2024/EXPORT_DRAGAS_2019.csv", 
+                     locale = locale(encoding = "ISO-8859-1"))
+# y uno la Base
+CV_18_19 <- rbind(CV_2018,
+                  CV_2019)
+```
+
+Cambio formato de Horas
+
+```{r}
+CV_18_19$FECHA <- dmy(CV_18_19$FECHA)
+
+CV_18_19f <- CV_18_19 %>% 
+  mutate(ANO = year(FECHA),
+         MES = month(FECHA),
+         DIA = day(FECHA))
+table(CV_18_19f$ANO)
+```
+
+
+```{r eval=FALSE}
+
+diahis1819 <- ggplot()+
+  geom_histogram(aes(CV_18_19f$DIA), 
+                     col=2,
+                     fill="white",
+                 binwidth = 1)+
+  theme_few()
+meshis1819 <- ggplot()+
+  geom_histogram(aes(CV_18_19f$MES), 
+                     col=3,
+                     fill="white",
+                 binwidth = 1)+
+  theme_few()
+velhis1819 <- ggplot()+
+  geom_histogram(aes(CV_18_19f$VELOCIDAD), 
+                     col=4,
+                     fill="white",
+                 binwidth = 0.1)+
+  theme_few()
+ggarrange(diahis1819,
+          meshis1819,
+          velhis1819,
+          ncol=3)
+```
 
 \newpage
 
