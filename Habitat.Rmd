@@ -74,7 +74,7 @@ Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Est
 costandalucia <- st_read(here("SHP_Chirla",
                               "costa_proyectada.shp"))
 grilla <- st_read(here("SHP_Chirla",
-                              "cuadriculas_definitivo.shp"))
+                              "cuadrกculas_definitivo.shp"))
 habitat <- st_read(here("SHP_Chirla",
                      "Habitats_region_IV.shp"))
 

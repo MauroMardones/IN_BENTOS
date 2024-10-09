@@ -598,8 +598,8 @@ sumest <- idlance5 %>%
 
 
 ```{r}
-CV_2018 <- read_csv2(here("DATOS/Cajas verdes chirla/Dragas_2018_2024/EXPORT_DRAGAS_2018.csv", 
-                     locale = locale(encoding = "ISO-8859-1")))
+CV_2018 <- read_csv2("DATOS/Cajas verdes chirla/Dragas_2018_2024/EXPORT_DRAGAS_2018.csv", 
+                     locale = locale(encoding = "ISO-8859-1"))
 CV_2019 <- read_csv2("DATOS/Cajas verdes chirla/Dragas_2018_2024/EXPORT_DRAGAS_2019.csv", 
                      locale = locale(encoding = "ISO-8859-1"))
 # y uno la Base
