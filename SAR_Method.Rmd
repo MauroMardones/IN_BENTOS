@@ -385,6 +385,8 @@ ggarrange(plotvel, plotdi,
           plotdi2,
           ncol =1)
 ```
+
+
 ```{r}
 
 scpdist1<- ggplot(datosfil)+
