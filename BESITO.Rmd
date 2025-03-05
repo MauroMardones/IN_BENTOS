@@ -122,7 +122,6 @@ pessum <- ggplot(cantes %>%
                                      vjust = 0.5,
                                      size = 8),
         legend.position = "none")
-
 # Contar la frecuencia de cada especie
 couentesp <- fauna %>% 
   group_by(Especie_Final) %>%

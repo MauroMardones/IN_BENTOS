@@ -66,7 +66,6 @@ library(sf)
 Trabajo de manipulación de datos de habitats
 
 
-
 Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Estos datos vectoriales fueron obtenidos desde la paina oficial de datos espaciales de la Junta de Andalucia [Shapesfile](https://portalrediam.cica.es/descargas?path=%2F08_AMBITOS_INTERES_AMBIENTAL%2F02_LITORAL_MARINO%2F04_SOCIOECONOMIA%2FZonasProduccionMoluscos)
 
 ## Leo Shapes y transformo a la proyección correcta.
@@ -112,6 +111,8 @@ grilla2 <- grilla1 %>%
 
 
 Ahora trato de engrillar los habitat
+
+
 ```{r}
 # # Clean the input data by removing duplicate vertices and making the object topologically valid
 sf_objeto_valido <- st_make_valid(habi1)

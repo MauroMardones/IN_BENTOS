@@ -240,7 +240,7 @@ knitr::include_graphics("FIG/umbralveloc.png")
 ```
 De esta forma, a cada señal proporcionada por la caja verde se le asignó una actividad: pesca, maniobra o navegada. En la figura 8 se puede ver un histograma que representa el número de registros en función de la velocidad para los registros filtrados, en él se observa cómo han desaparecido los registros en puerto y que existen tres modas correspondientes a las actividades mencionadas, maniobras (M), pesca (P) y navegaciones (N). [@Cohan2012]
 
-Los registros en los cuales la velocidad del buque fue inferior a 1.5 nudos o entre 3.5 y 6 nudos, fueron considerados como maniobras de pesca (actividad "M"), tales como la virada y largada del arte o el reposicionamiento del buque precedente al arrastre.
+Los registros en los cuales la velocidad del buque fue inferior a 1.5 nudos o entre 3.5 y 6 nudos, fueron considerados como maniobras de pesca (M), tales como la virada y largada del arte o el reposicionamiento del buque precedente al arrastre.
 
 ```{r}
 cajasfil2 <- cajasfilp %>%
@@ -261,7 +261,33 @@ dim(cajasfil2)
 4- Ahora calculo las distancias entre puntos. como??
 
 \newpage
-### Método 1
+
+
+
+\[
+d = 2 R \cdot \arctan2 \left( \sqrt{a}, \sqrt{1 - a} \right)
+\]
+
+where:
+
+\[
+a = \sin^2 \left(\frac{\Delta\varphi}{2} \right) + \cos (\varphi_1) \cdot \cos (\varphi_2) \cdot \sin^2 \left(\frac{\Delta\lambda}{2} \right)
+\]
+
+and
+
+\[
+\Delta\varphi = \varphi_2 - \varphi_1, \quad \Delta\lambda = \lambda_2 - \lambda_1
+\]
+
+where:  
+- \( d \) is the distance between the two points (in meters).  
+- \( R = 6,371,000 \) m is the Earth's radius.  
+- \( \varphi_1, \varphi_2 \) are the latitudes in radians.  
+- \( \lambda_1, \lambda_2 \) are the longitudes in radians.  
+- \( \arctan2(y, x) \) is the two-argument arctangent function.  
+
+
 
 ```{r echo=TRUE}
 calcular_DISTANCIA <- function(lat1, lon1, lat2, lon2) {
@@ -308,7 +334,8 @@ Probar forma que indica Ana Magro, que es calcular tiempo de arrastre X Velocida
 datosp <- datos %>% 
   arrange(fecha_hora) %>% 
  mutate(diff = fecha_hora - lag(fecha_hora),
-         diff_secs = as.numeric(diff, units = 'secs'))
+         diff_secs = as.numeric(diff, 
+                                units = 'secs'))
 ```
 
 5- Diferenciar entre registros de pesca y no pesca basándose en la velocidad y solo dejó los registros `P`
@@ -386,7 +413,6 @@ ggarrange(plotvel, plotdi,
           ncol =1)
 ```
 
-
 ```{r}
 
 scpdist1<- ggplot(datosfil)+
@@ -438,7 +464,7 @@ Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Est
 costandalucia <- st_read(here("SHP_Chirla",
                               "costa_proyectada.shp"))
 grilla <- st_read(here("SHP_Chirla",
-                              "cuadriculas_definitivo.shp"))
+                              "cuadrกculas_definitivo.shp"))
 bati <- st_read(here("SHP_Chirla",
                      "batimetria_rediam20x20_10m_id.shp"))
 habitat <- st_read(here("SHP_Chirla",
@@ -554,7 +580,7 @@ masrend <- ggplot() +
   theme_few()+
   xlim(-7.6,-6.3)+
   ylim(36.65, 37.3)
-masrend
+
 ```
 
 
@@ -592,9 +618,12 @@ Solo para visualizar, cambio el objeto a `data.frame`. Pero debo considerar `idl
 idlance5 <- as.data.frame(idlance4)
 
 sumest <- idlance5 %>% 
-  group_by(Estaciones,MATRICULA) %>% 
-  summarise(num_lances = n_distinct(ID_Lance, na.rm = TRUE))
+  group_by(Estaciones) %>% 
+  summarise(num_lances = n_distinct(ID_Lance, na.rm = TRUE)) %>% 
+  arrange(desc(num_lances))
+sumest
 ```
+
 
 ### Data 2018 y 2019
 
@@ -622,31 +651,412 @@ table(CV_18_19f$ANO)
 ```
 
 
-```{r eval=FALSE}
+Los métodos para la estimación y cartografiado del esfuerzo pesquero a partir de los datos de los VMS ya se han estudiado en varias pesquerías anteriormente. Estos estudios recomiendan un proceso en varios pasos según [@Cojan2012]: 
 
-diahis1819 <- ggplot()+
-  geom_histogram(aes(CV_18_19f$DIA), 
-                     col=2,
-                     fill="white",
-                 binwidth = 1)+
-  theme_few()
-meshis1819 <- ggplot()+
-  geom_histogram(aes(CV_18_19f$MES), 
-                     col=3,
-                     fill="white",
-                 binwidth = 1)+
-  theme_few()
-velhis1819 <- ggplot()+
-  geom_histogram(aes(CV_18_19f$VELOCIDAD), 
-                     col=4,
-                     fill="white",
-                 binwidth = 0.1)+
-  theme_few()
-ggarrange(diahis1819,
-          meshis1819,
-          velhis1819,
-          ncol=3)
+1- Borrar los registros duplicados, 
+
+```{r}
+# Encontrar filas duplicadas
+filas_duplicadas_1819 <- duplicated(CV_18_19f)
+# Mostrar las filas duplicadas
+#datos_duplicados1819 <- CV_18_19f[filas_duplicadas_1819, ]
+
+# Opcionalmente, para eliminar filas duplicadas manteniendo solo la última ocurrencia de cada fila duplicada:
+cajasfil1819 <- CV_18_19f[!duplicated(CV_18_19f , 
+                                 fromLast = TRUE), ]
 ```
+
+2- Borrar los registros en puertos. 
+
+```{r}
+cajasfilp <- cajasfil1819 %>% 
+  filter(`¿EN PUERTO?` == 0)
+```
+
+
+```{r}
+velhis <- ggplot()+
+  geom_histogram(aes(cajasfilp$VELOCIDAD,
+                     fill=cajasfilp$VELOCIDAD < 1.5),
+                 binwidth = 0.02)+
+  scale_fill_viridis_d()+
+  theme_few()+
+  theme(legend.position = "none")
+```
+
+3- Calcular el intervalo de tiempo entre registros sucesivos, 
+
+La idea es identificar los registros con tiempo efectivo de arrastre como lo muestra la Figura \ref{fig:esq};
+
+```{r esq, echo=TRUE, out.width = "50%", fig.align='center', fig.cap="\\label{esq}Umbrarl de definiciones para calculo de velocidad de arrantre"}
+knitr::include_graphics("FIG/umbralveloc.png")
+```
+De esta forma, a cada señal proporcionada por la caja verde se le asignó una actividad: pesca, maniobra o navegada. En la figura 8 se puede ver un histograma que representa el número de registros en función de la velocidad para los registros filtrados, en él se observa cómo han desaparecido los registros en puerto y que existen tres modas correspondientes a las actividades mencionadas, maniobras (M), pesca (P) y navegaciones (N). [@Cohan2012]
+
+Los registros en los cuales la velocidad del buque fue inferior a 1.5 nudos o entre 3.5 y 6 nudos, fueron considerados como maniobras de pesca (M), tales como la virada y largada del arte o el reposicionamiento del buque precedente al arrastre.
+
+```{r}
+cajasfil2 <- cajasfilp %>%
+  mutate(MANIOBRA = case_when(
+    VELOCIDAD >= 0 & VELOCIDAD < 1.5 ~ "M",
+    VELOCIDAD >= 1.5 & VELOCIDAD < 3.5 ~ "P",
+    VELOCIDAD >= 3.5 & VELOCIDAD < 6 ~ "M",
+    VELOCIDAD >= 6 & VELOCIDAD <= 10 ~ "N",
+    TRUE ~ NA_character_  # Por si acaso hay valores fuera de los rangos especificados
+  ))
+
+dim(cajasfil2)
+
+```
+
+
+
+4- Ahora calculo las distancias entre puntos. como??
+
+\newpage
+### Método 1
+
+
+```{r echo=TRUE}
+calcular_DISTANCIA <- function(lat1, lon1, lat2, lon2) {
+  # Converto to radians
+  lat1_rad <- lat1 * pi / 180
+  lon1_rad <- lon1 * pi / 180
+  lat2_rad <- lat2 * pi / 180
+  lon2_rad <- lon2 * pi / 180
+  # Ratio earth in mts
+  radio_tierra <- 6371000
+  # Calculate distance using haversine equation
+  dlat <- lat2_rad - lat1_rad
+  dlon <- lon2_rad - lon1_rad
+  a <- sin(dlat / 2)^2 + cos(lat1_rad) * cos(lat2_rad) * sin(dlon / 2)^2
+  c <- 2 * atan2(sqrt(a), sqrt(1 - a))
+  DISTANCIA <- radio_tierra * c
+  return(DISTANCIA)
+}
+
+datos <- cajasfil2
+# Convertir la columna de fecha y hora a un objeto POSIXct con lubridate
+datos$fecha_hora <- ymd_hms(paste(datos$FECHA, datos$HORA))
+
+# Ordenar el dataframe por fecha y hora
+datos <- datos %>% 
+  arrange(fecha_hora)
+# Calcular la DISTANCIA para cada fila del dataframe
+datos$DISTANCIA <- mapply(calcular_DISTANCIA,
+                          datos$LATITUD,
+                          datos$LONGITUD,
+                          lag(datos$LATITUD),
+                          lag(datos$LONGITUD))
+
+# La primera fila tendrá NA ya que no hay punto anterior
+datos$DISTANCIA[1] <- NA
+head(datos)
+```
+
+### Método 2
+
+Probar forma que indica Ana Magro, que es calcular tiempo de arrastre X Velocidad. La idea es calcular el tiempo entre registros dado por `fecha_hora`. Y multiplicamos por `N_VELOCIDAD`
+
+```{r}
+datosp <- datos %>% 
+  arrange(fecha_hora) %>% 
+ mutate(diff = fecha_hora - lag(fecha_hora),
+         diff_secs = as.numeric(diff, 
+                                units = 'secs'))
+```
+
+5- Diferenciar entre registros de pesca y no pesca basándose en la velocidad y solo dejó los registros `P`
+
+```{r}
+datos1 <- datosp %>% 
+  filter(MANIOBRA=="P")
+```
+
+ahora dejo valores de distancia menores a 1 km (preguntar). Luego calculo las variables de velocidad en metros/seg. y tiempo recorrido por la rastra. 
+
+```{r}
+datosfil <- datos1 %>% 
+  filter(DISTANCIA < 5000) %>% 
+  mutate(VELONUE = VELOCIDAD*0.51444, # de nudos a mts/seg
+         TIEMPO = DISTANCIA/VELONUE, # Tiempo en  relacion a var DISTANCA
+        DISTANCIA2 = diff_secs * VELONUE, # por ahora no ocuparé el Metodo 2
+        SA = DISTANCIA*2.5, # cDato de anchura draga chirla MD y LS
+        SA2 = DISTANCIA2*2.5)
+        
+```
+
+
+
+Calculo el SAR
+
+De acuerdo a @Church2016, el cálculo de la Razón del Área Barrida (Swept Area Ratio, SAR) `SA` es el área barrida (mts/2), `CA` es el área de la celda y `SAR` es la proporción del área barrida (equivalente al número de veces que la celda fue barrida).
+
+donde;
+
+$$
+SAr = \frac{SA}{CA}
+$$
+
+donde `SA`sera la distancia recorrida el arrastre y la apertura en metros del draga, es decir;
+
+$$
+SA = Distancia \times Apertura \ Draga
+$$
+Pero primero, debemos engrillar la data y luego calcular por cada celda
+
+
+Ahora produzco un mapa de las grillas utilizadas en la pesquería de Chirla. Estos datos vectoriales fueron obtenidos desde la paina oficial de datos espaciales de la Junta de Andalucia [Shapesfile](https://portalrediam.cica.es/descargas?path=%2F08_AMBITOS_INTERES_AMBIENTAL%2F02_LITORAL_MARINO%2F04_SOCIOECONOMIA%2FZonasProduccionMoluscos)
+
+## Leo Shapes y transformo a la proyección correcta.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+costandalucia <- st_read(here("SHP_Chirla",
+                              "costa_proyectada.shp"))
+grilla <- st_read(here("SHP_Chirla",
+                              "cuadrกculas_definitivo.shp"))
+bati <- st_read(here("SHP_Chirla",
+                     "batimetria_rediam20x20_10m_id.shp"))
+habitat <- st_read(here("SHP_Chirla",
+                     "Habitats_region_IV.shp"))
+demarca <- st_read("SHP_Chirla",
+                   "Demarcaciones_Marinas_WGS84_2018")
+
+# Transformo a objetos sf con la crs correcta
+grilla1 <- st_transform(grilla, 
+                        "+init=epsg:4326")
+costandalucia1 <- st_transform(costandalucia,
+                               "+init=epsg:4326")
+bati1 <- st_transform(bati,
+                      "+init=epsg:4326")
+
+habi1 <- st_transform(habitat,
+                      "+init=epsg:4326")
+
+dema1 <- st_transform(demarca,
+                      "+init=epsg:4326")
+
+```
+
+
+Ahora identifico la base que quiero plotear y hago el calculo de `SAR`
+
+```{r ssmu1}
+sabd <- datosfil %>% 
+  st_as_sf(coords = c("LONGITUD", "LATITUD"),  
+                  crs = "+init=epsg:4326") %>% 
+  mutate(CELDAM2 = rep(857476),
+         length.out = nrow(datosfil),
+         SAR= (SA/CELDAM2)*100,
+         SAR2 =(SA2/CELDAM2)*100)
+```
+
+This grid has the same characteristics as the environmental data grids
+that will be called up later. This grid is 1x0.5 degrees which allows a
+clear visualization of the processes, whether biological and/or
+environmental.
+
+```{r gri}
+# the first object dsargrillada# the first object drives the output geometry
+grilla2 <- grilla1 %>%
+  rename("Estaciones" = "ID_CELDA") 
+# ahora genero la base sf para el sar
+grillasar <- st_join(grilla2, sabd)
+```
+
+
+ploteo SAR
+
+```{r warning=FALSE}
+masrend <- ggplot() +
+  #geom_sf(data = lito1, fill="white", color="blue") +
+  geom_sf(data = grilla2, 
+          fill=NA, 
+          color="red") +
+  geom_sf(data = costandalucia1, 
+          fill="#fee8c8") +
+  geom_sf(data = grillasar %>% 
+            filter(SAR>0,
+                   SAR<1) %>% 
+            drop_na(SAR), 
+          aes(fill=cut(SAR,
+                       breaks = seq(0, 1, by = 0.2))))+
+  # geom_sf(data = fisicomar1, alpha=0.1,
+  #         linetype=5) +
+  scale_fill_brewer(type = "qual",
+                    #labels = label, # if you must
+                    palette = "Reds",
+                    name = "SAR") +
+    coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))+
+  # ggrepel::geom_label_repel(
+  #   data = zonapro1,
+  #   aes(label = ZONA, geometry = geometry),
+  #   stat = "sf_coordinates",
+  #   min.segment.length = ,
+  #   colour = "black",
+  #   size = 2,
+  #   segment.colour = "black",
+  #   box.padding = 0.7,
+  #   max.overlaps = 50) +
+  theme_few()+
+  xlim(-7.6,-6.3)+
+  ylim(36.65, 37.3)
+
+```
+ploteo Effor
+
+```{r}
+
+# Crear categorías de esfuerzo
+grillasar2 <- grillasar %>%
+  mutate(SAR_cat = cut(SAR,
+                       breaks = c(0, 0.1, 0.4, 0.7, 1.4, Inf),
+                       labels = c("No Effort", 
+                                  "Low Effort",
+                                  "Medium",
+                                  "High Effort",
+                                  "Very High Effort"),
+                       include.lowest = TRUE))
+
+# Crear el mapa
+maseffor <- ggplot() +
+  #geom_sf(data = grilla2, fill = NA, color = "red") +
+  geom_sf(data = costandalucia1, fill = "#fee8c8") +
+  geom_sf(data = grillasar2 %>% filter(!is.na(SAR)), 
+          aes(fill = SAR_cat)) +
+  scale_fill_brewer(type = "seq",
+                    palette = "YlOrRd",
+                    name = "Effort Level") +
+  coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S'))) +
+  theme_few() +
+  xlim(-7.6, -6.3) +
+  ylim(36.65, 37.3)
+
+
+```
+
+
+## Calculo de lances por estacion o por habitat 
+
+Pero para esto, primer debemos asignar un ID para cada operación.
+
+```{r}
+# Primero, ordena los datos por matrícula y fecha
+idlance <- grillasar %>%
+  arrange(MATRICULA, FECHA, HORA)
+
+# Luego, calcula la diferencia en segundos entre cada registro y el siguiente
+idlance2 <- idlance %>%
+  mutate(diff_secs_next = lead(diff_secs, default = 0))
+
+# Ahora, crea una nueva columna que sea TRUE si la diferencia en segundos es mayor a 1200 (20 minutos)
+# o si es el último registro de la misma matrícula y fecha
+idlance3 <- idlance2 %>%
+  mutate(ID_Lance = ifelse(diff_secs_next > 1200 | 
+                             lead(MATRICULA) != MATRICULA | 
+                             lead(FECHA) != FECHA, TRUE, FALSE))
+# Convierte la columna ID_Lance a formato numérico y luego asigna un ID incremental
+idlance4 <- idlance3 %>%
+  group_by(MATRICULA) %>% 
+  mutate(ID_Lance = cumsum(ID_Lance))
+
+# Muestra los primeros registros para verificar
+head(idlance4)
+```
+
+Solo para visualizar, cambio el objeto a `data.frame`. Pero debo considerar `idlance4` para engrillar.
+
+```{r}
+idlance5 <- as.data.frame(idlance4)
+
+sumest <- idlance4 %>% 
+  group_by(Estaciones, ANO) %>% 
+  summarise(num_lances = n_distinct(ID_Lance, na.rm = TRUE)) %>% 
+  arrange(desc(num_lances)) %>% 
+  filter(num_lances > 0) %>% 
+  mutate(Estaciones = as.character(Estaciones)) %>%  # Convertir a carácter
+  bind_rows(tibble(Estaciones = "Total", 
+                   num_lances = sum(.$num_lances, na.rm = TRUE)))
+
+#write.csv2(sumest, "Tota_Hauls.csv", sep=";")
+
+```
+
+```{r}
+# Definir los cortes de intervalos de 50 en 50
+sumest2 <- sumest %>%
+  filter(num_lances<500,
+         ANO == 2019) %>% 
+  mutate(lances_cat = cut(num_lances, 
+                          breaks = seq(0, max(num_lances, na.rm = TRUE) + 50, by = 50),
+                          include.lowest = TRUE, right = FALSE))
+
+# Definir colores para cada categoría
+colores <- RColorBrewer::brewer.pal(n = length(levels(sumest$lances_cat)), "Greens")
+
+# Mapa con etiquetas de lances por celda
+masrend1 <- ggplot() +
+  # Dibujar la grilla de referencia
+  geom_sf(data = grilla2, fill = NA, color = "grey") +
+  
+  # Dibujar la capa base con la costa
+  geom_sf(data = costandalucia1, fill = "#fee8c8") +
+  
+  # Dibujar las estaciones con color según la categoría de num_lances
+  geom_sf(data = sumest2, aes(fill = lances_cat), color = "black") +
+  
+  # Escala de colores categórica con cuadrados en la leyenda
+  scale_fill_manual(values = colores, name = "N Hauls") +
+  #facet_wrap(.~ANO)+
+  
+  # Añadir etiquetas con el número de lances en cada celda
+  #geom_sf_text(data = sumest, aes(label = num_lances), color = "black", size = 3) +
+  
+  # Coordenadas y etiquetas de ejes
+  coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S'))) +
+  
+  # Tema estético
+  theme_few() +
+  xlim(-7.6, -6.3) +
+  ylim(36.65, 37.3)
+```
+
+
+```{r}
+# Mostrar el mapa
+tresplot <- ggarrange(masrend,
+          masrend1,
+          maseffor,
+          ncol = 1)
+
+# Guardar la imagen
+ggsave("tresplot.png", 
+       plot = tresplot,
+       width = 8, 
+       height = 10, 
+       dpi = 300)
+
+```
+
+tabla
+
+```{r}
+sumestwide <- as.data.frame(sumest) %>% 
+  dplyr::select(1, 2, 3) %>% 
+  pivot_wider(names_from = ANO,
+              values_from = num_lances) %>% 
+  bind_rows(
+    summarise(., Estaciones = "Total", across(where(is.numeric), ~ sum(.x, na.rm = TRUE)))
+  )
+#write.csv2(sumestwide, "Total_Hauls_1819.csv")
+```
+
+
 
 \newpage
 
