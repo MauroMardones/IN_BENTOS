@@ -78,6 +78,7 @@ library(ggthemes)
 library(geosphere)
 library(sp)
 library(sf)
+library(here)
 ```
 
 # ABSTRACT
@@ -633,6 +634,8 @@ CV_2018 <- read_csv2("DATOS/Cajas verdes chirla/Dragas_2018_2024/EXPORT_DRAGAS_2
                      locale = locale(encoding = "ISO-8859-1"))
 CV_2019 <- read_csv2("DATOS/Cajas verdes chirla/Dragas_2018_2024/EXPORT_DRAGAS_2019.csv", 
                      locale = locale(encoding = "ISO-8859-1"))
+est_exclu <- read.csv(here("DATOS",
+                       "Data_SAR_2013_2019OK.csv"))
 # y uno la Base
 CV_18_19 <- rbind(CV_2018,
                   CV_2019)
@@ -863,15 +866,56 @@ grilla2 <- grilla1 %>%
 grillasar <- st_join(grilla2, sabd)
 ```
 
+```{r}
+estexcluni <- as.character(est_exclu$Estaciones)
+
+```
+
+```{r}
+
+# Filtra las estaciones excluidas
+estexcluni <- c(1, 2, 3, 4, 5, 6, 7, 9, 10, 13, 14, 16, 17, 20, 21, 24, 27, 30, 31, 33, 36, 39, 42, 43, 45, 46, 48, 51, 
+               55, 59, 60, 63, 64, 65, 68, 69, 70, 72, 73, 74, 77, 80, 81, 84, 85, 86, 88, 89, 92, 93, 96, 100, 101, 102, 
+               104, 105, 106, 108, 109, 110, 112, 113, 114, 117, 118, 121, 122, 124, 125, 128, 133, 139, 146, 147, 155, 
+               156, 159, 160, 164, 165, 167, 168, 172, 173, 174, 179, 180, 181, 186, 187, 188, 189, 191, 192, 193, 194, 195, 
+               196, 197, 198, 199, 220, 227, 231, 232, 234, 238, 241, 243, 244, 247, 249)
+
+# Filtra las estaciones de la grilla según las exclusiones
+grillasar_filtro <- grillasar %>%
+  filter(SAR > 0, SAR < 1, !Estaciones %in% estexcluni) %>%  # Asegúrate de que `station_id` es el nombre de la columna de las estaciones
+  drop_na(SAR)
+
+# Genera el gráfico con las estaciones excluidas como celdas negras
+masest <- ggplot() +
+  geom_sf(data = grilla2, 
+           fill=NA, 
+           color="red") +
+  geom_sf(data = costandalucia1, fill = "#fee8c8") +
+  scale_fill_brewer(type = "qual", palette = "Reds", name = "SAR") +
+  geom_sf(data = grillasar %>%
+            filter(Estaciones %in% estexcluni),  # Filtra las estaciones excluidas
+          fill = "black", color = "grey",
+          alpha=0.8) +  # Celdas negras para las estaciones excluidas
+  coord_sf() +
+  xlab(expression(paste(Longitude^o, '~O'))) +
+  ylab(expression(paste(Latitude^o, '~S'))) +
+  theme_few() +
+  xlim(-7.6, -6.3) +
+  ylim(36.65, 37.3)
+
+masest
+
+```
+
 
 ploteo SAR
 
 ```{r warning=FALSE}
 masrend <- ggplot() +
   #geom_sf(data = lito1, fill="white", color="blue") +
-  geom_sf(data = grilla2, 
-          fill=NA, 
-          color="red") +
+  # geom_sf(data = grilla2, 
+  #         fill=NA, 
+  #         color="red") +
   geom_sf(data = costandalucia1, 
           fill="#fee8c8") +
   geom_sf(data = grillasar %>% 
@@ -917,13 +961,15 @@ grillasar2 <- grillasar %>%
                                   "Medium",
                                   "High Effort",
                                   "Very High Effort"),
-                       include.lowest = TRUE))
+                       include.lowest = TRUE)) %>% 
+  filter(Estaciones == estexcluni)
 
 # Crear el mapa
 maseffor <- ggplot() +
   #geom_sf(data = grilla2, fill = NA, color = "red") +
   geom_sf(data = costandalucia1, fill = "#fee8c8") +
-  geom_sf(data = grillasar2 %>% filter(!is.na(SAR)), 
+  geom_sf(data = grillasar2 %>% 
+            filter(!is.na(SAR)), 
           aes(fill = SAR_cat)) +
   scale_fill_brewer(type = "seq",
                     palette = "YlOrRd",
@@ -976,10 +1022,25 @@ sumest <- idlance4 %>%
   group_by(Estaciones, ANO) %>% 
   summarise(num_lances = n_distinct(ID_Lance, na.rm = TRUE)) %>% 
   arrange(desc(num_lances)) %>% 
-  filter(num_lances > 0) %>% 
+  filter(num_lances > 0,
+         Estaciones %in% estexcluni) %>% 
   mutate(Estaciones = as.character(Estaciones)) %>%  # Convertir a carácter
   bind_rows(tibble(Estaciones = "Total", 
                    num_lances = sum(.$num_lances, na.rm = TRUE)))
+
+
+sumestwide <- as.data.frame(sumest) %>% 
+  dplyr::select(1, 2, 3) %>% 
+  pivot_wider(names_from = ANO,
+              values_from = num_lances) %>% 
+  bind_rows(
+    summarise(., Estaciones = "Total", across(where(is.numeric), ~ sum(.x, na.rm = TRUE)))
+  ) 
+
+#write.csv2(sumestwide, "Total_Hauls_1819.csv")
+
+
+```
 
 #write.csv2(sumest, "Tota_Hauls.csv", sep=";")
 
@@ -987,40 +1048,29 @@ sumest <- idlance4 %>%
 
 ```{r}
 # Definir los cortes de intervalos de 50 en 50
+sumest$Estaciones <- as.integer(sumest$Estaciones)
+
 sumest2 <- sumest %>%
   filter(num_lances<500,
          ANO == 2019) %>% 
   mutate(lances_cat = cut(num_lances, 
                           breaks = seq(0, max(num_lances, na.rm = TRUE) + 50, by = 50),
                           include.lowest = TRUE, right = FALSE))
-
 # Definir colores para cada categoría
-colores <- RColorBrewer::brewer.pal(n = length(levels(sumest$lances_cat)), "Greens")
+colores <- RColorBrewer::brewer.pal(n = length(levels(sumest2$lances_cat)), "Greens")
 
 # Mapa con etiquetas de lances por celda
 masrend1 <- ggplot() +
-  # Dibujar la grilla de referencia
-  geom_sf(data = grilla2, fill = NA, color = "grey") +
-  
-  # Dibujar la capa base con la costa
+  #geom_sf(data = grilla2, fill = NA, color = "grey") +
   geom_sf(data = costandalucia1, fill = "#fee8c8") +
-  
-  # Dibujar las estaciones con color según la categoría de num_lances
-  geom_sf(data = sumest2, aes(fill = lances_cat), color = "black") +
-  
-  # Escala de colores categórica con cuadrados en la leyenda
+  geom_sf(data = sumest2, 
+          aes(fill = lances_cat), color = "black") +
   scale_fill_manual(values = colores, name = "N Hauls") +
   #facet_wrap(.~ANO)+
-  
-  # Añadir etiquetas con el número de lances en cada celda
   #geom_sf_text(data = sumest, aes(label = num_lances), color = "black", size = 3) +
-  
-  # Coordenadas y etiquetas de ejes
   coord_sf() +
   xlab(expression(paste(Longitude^o,~'O'))) +
   ylab(expression(paste(Latitude^o,~'S'))) +
-  
-  # Tema estético
   theme_few() +
   xlim(-7.6, -6.3) +
   ylim(36.65, 37.3)
@@ -1029,10 +1079,12 @@ masrend1 <- ggplot() +
 
 ```{r}
 # Mostrar el mapa
-tresplot <- ggarrange(masrend,
+tresplot <- ggarrange(masest,
+                      masrend,
           masrend1,
-          maseffor,
-          ncol = 1)
+          maseffor, 
+          labels = c("A", "B", "C", "D"),  # Letras para cada gráfico
+          ncol = 2, nrow = 2)
 
 # Guardar la imagen
 ggsave("tresplot.png", 
@@ -1043,18 +1095,7 @@ ggsave("tresplot.png",
 
 ```
 
-tabla
 
-```{r}
-sumestwide <- as.data.frame(sumest) %>% 
-  dplyr::select(1, 2, 3) %>% 
-  pivot_wider(names_from = ANO,
-              values_from = num_lances) %>% 
-  bind_rows(
-    summarise(., Estaciones = "Total", across(where(is.numeric), ~ sum(.x, na.rm = TRUE)))
-  )
-#write.csv2(sumestwide, "Total_Hauls_1819.csv")
-```
 
 
 
