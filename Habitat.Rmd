@@ -379,6 +379,7 @@ granugri <- granuest %>%
 granogri2 <- st_join(grilla2, granugri)
 
 ```
+
 Mapa 
 
 
@@ -401,5 +402,66 @@ granumap <- ggplot() +
   ylim(36.6, 37.4)
 granumap
 ```
+
+
+# Datos Yoli Van Veen
+
+```{r}
+draga <- read_excel("DATOS/ACUVEN-3_A_dragas_muestras_Rai_SR.xlsx")
+head(draga)
+names(draga)
+```
+```{r warning=FALSE}
+
+# Filtrar los datos que tienen valor en 'Estacion'
+draga_filtrada <- draga %>%
+  filter(!is.na(Estacion)) %>%
+  mutate(Estacion = as.character(Estacion))
+
+# Convertir a objeto sf
+draga_sf <- st_as_sf(draga_filtrada, coords = c("gpxx_lon", "gpxx_lat"), crs = 4326)
+
+# Agregar las etiquetas al plot, sin puntos
+grillado +
+  geom_text(data = draga_sf,
+            aes(label = Estacion, geometry = geometry),
+            stat = "sf_coordinates",
+            size = 3,
+            color = "black",
+            check_overlap = TRUE)
+
+
+```
+
+con tipo de Fondo
+
+
+```{r warning=FALSE}
+# Filtrar y categorizar el tipo de fondo
+draga_filtrada <- draga %>%
+  filter(!is.na(Estacion)) %>%
+  mutate(
+    Estacion = as.character(Estacion),
+    Fondo_simplificado = case_when(
+      str_detect(`Tipo fondo`, regex("cascajo", ignore_case = TRUE)) ~ "Cascajo",
+      str_detect(`Tipo fondo`, regex("fango", ignore_case = TRUE)) ~ "Fango",
+      str_detect(`Tipo fondo`, regex("arena", ignore_case = TRUE)) ~ "Arena",
+      TRUE ~ "Otro"
+    )
+  )
+
+# Convertir a objeto sf
+draga_sf <- st_as_sf(draga_filtrada, coords = c("gpxx_lon", "gpxx_lat"), crs = 4326)
+
+# Dibujar etiquetas con color según el fondo simplificado
+grillado +
+  geom_text(data = draga_sf,
+            aes(label = Estacion, color = Fondo_simplificado, geometry = geometry),
+            stat = "sf_coordinates",
+            size = 3,
+            check_overlap = TRUE) +
+  scale_color_manual(values = c("Arena" = "#fdbb84", "Fango" = "#bcbddc", "Cascajo" = "#a1d99b", "Otro" = "gray70")) +
+  guides(color = guide_legend(title = "Tipo de fondo"))
+
 ```
 
