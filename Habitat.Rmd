@@ -413,22 +413,55 @@ names(draga)
 ```
 ```{r warning=FALSE}
 
+#249, 232 y 234
+
 # Filtrar los datos que tienen valor en 'Estacion'
 draga_filtrada <- draga %>%
   filter(!is.na(Estacion)) %>%
-  mutate(Estacion = as.character(Estacion))
+  mutate(
+    Estacion = as.character(Estacion),
+    Fondo_simplificado = case_when(
+      str_detect(`Tipo fondo`, regex("cascajo", ignore_case = TRUE)) ~ "Cascajo",
+      str_detect(`Tipo fondo`, regex("fango", ignore_case = TRUE)) ~ "Fango",
+      str_detect(`Tipo fondo`, regex("arena", ignore_case = TRUE)) ~ "Arena",
+      TRUE ~ "Otro"
+    )
+  )
 
 # Convertir a objeto sf
 draga_sf <- st_as_sf(draga_filtrada, coords = c("gpxx_lon", "gpxx_lat"), crs = 4326)
 
-# Agregar las etiquetas al plot, sin puntos
-grillado +
-  geom_text(data = draga_sf,
-            aes(label = Estacion, geometry = geometry),
-            stat = "sf_coordinates",
-            size = 3,
-            color = "black",
-            check_overlap = TRUE)
+# Filtrar y categorizar el tipo de fondo
+
+
+library(ggrepel)
+
+# Filtrar las estaciones deseadas
+draga_labels <- draga_sf %>%
+  filter(Estacion %in% c("249", "232", "234"))
+
+# Crear el gráfico
+dragayoli <- ggplot() +
+  geom_sf(data = grilla2, fill = NA, color = "red") +
+  geom_sf(data = costandalucia1, fill = "#fee8c8") +
+  coord_sf() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S'))) +
+  geom_sf(data = draga_labels, color = "black", size = 1) +  # puntos visibles
+  geom_text_repel(data = draga_labels,
+                  aes(label = Estacion, geometry = geometry),
+                  stat = "sf_coordinates",
+                  size = 3,
+                  color = "black",
+                  nudge_x = -0.05,         # desplaza ligeramente a la izquierda
+                  segment.color = "black",
+                  segment.size = 0.4,
+                  max.overlaps = Inf) +    # permite que siempre intente mostrar
+  theme_few() +
+  xlim(-7.6, -6.3) +
+  ylim(36.65, 37.3)
+
+dragayoli
 
 
 ```
@@ -460,8 +493,73 @@ grillado +
             stat = "sf_coordinates",
             size = 3,
             check_overlap = TRUE) +
-  scale_color_manual(values = c("Arena" = "#fdbb84", "Fango" = "#bcbddc", "Cascajo" = "#a1d99b", "Otro" = "gray70")) +
+  scale_color_manual(values = c("Arena" = "blue", "Fango" = "red", "Cascajo" = "green", "Otro" = "black")) +
   guides(color = guide_legend(title = "Tipo de fondo"))
+
+```
+
+
+```{r}
+library(ggforce)
+library(dplyr)
+
+# Datos de ejemplo para los gráficos de torta
+pie_data <- tibble::tribble(
+  ~Estacion, ~Tipo,      ~valor,
+  "249",     "Arena",     0.6,
+  "249",     "Fango",     0.3,
+  "249",     "Cascajo",   0.1,
+  "232",     "Arena",     0.2,
+  "232",     "Fango",     0.4,
+  "232",     "Cascajo",   0.4,
+  "234",     "Arena",     0.1,
+  "234",     "Fango",     0.7,
+  "234",     "Cascajo",   0.2
+)
+
+# Unir coordenadas
+# Mantener la geometría en 'draga_sf' sin eliminarla
+pie_data <- pie_data %>% 
+  left_join(
+    draga_sf %>% select(Estacion, geometry),  # No usar st_drop_geometry()
+    by = "Estacion"
+  ) %>% 
+  st_as_sf() %>%  # Asegurarse de que pie_data tenga geometría
+  st_transform(4326)  # Asegurar CRS correcto
+
+
+# Calcular ángulos
+pie_data <- pie_data %>%
+  group_by(Estacion) %>%
+  arrange(Tipo) %>%
+  mutate(
+    total = sum(valor),
+    end = 2 * pi * cumsum(valor / total),
+    start = lag(end, default = 0),
+    middle = (start + end) / 2,
+    r = 0.05  # radio de las tortas
+  )
+
+# Graficar
+ggplot() +
+  geom_sf(data = grilla2, fill = NA, color = "red") +
+  geom_sf(data = costandalucia1, fill = "#fee8c8") +
+  geom_arc_bar(
+    data = pie_data,
+    aes(x0 = st_coordinates(geometry)[,1],
+        y0 = st_coordinates(geometry)[,2],
+        r0 = 0, r = r,
+        start = start, end = end,
+        fill = Tipo),
+    color = "black", size = 0.2, alpha = 0.8
+  ) +
+  scale_fill_manual(values = c("Arena" = "#fdbb84", 
+                               "Fango" = "#bcbddc", 
+                               "Cascajo" = "#a1d99b")) +
+  coord_sf(xlim = c(-6.8, -6.3), ylim = c(36.65, 37.1)) +
+  theme_few() +
+  xlab(expression(paste(Longitude^o,~'O'))) +
+  ylab(expression(paste(Latitude^o,~'S')))
 
 ```
 
