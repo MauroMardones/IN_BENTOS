@@ -5,7 +5,8 @@ library(tidyverse)
 library(janitor)
 fauna <- read_excel("MEGAFAUNA/FAUNA_MUESTREOS_AVANZADA.xlsx", 
                                        sheet = "DATOS")
-glimpse(fauna)
+
+
 
 fauna2 <- clean_names(fauna)
 glimpse(fauna2)
@@ -41,8 +42,6 @@ ggplot(diversidad, aes(x = punto, y = )) +
   labs(title = "Índice de Shannon por punto", x = "Punto", y = "Shannon") +
   theme_minimal() +
   coord_flip()
-
-
 
 
 ## Cluster
@@ -260,3 +259,174 @@ library(vegan)
 
 permanova <- adonis2(comunidad ~ tipo_sedimento, data = metadata, method = "bray")
 print(permanova)
+
+
+
+### fauna ICES
+
+faunaices <- read_excel("DATOS/MEGAFAUNA/FAUNA_MUESTREOS_AVANZADA-2.xlsx", 
+                        sheet = "Sheet1")
+faunaices2 <- janitor::clean_names(faunaices)
+glimpse(fauna)
+
+faunaices3 <- faunaices2 %>%
+  pivot_longer(
+    cols = matches("^e_?\\d+$"),  # selecciona columnas que empiezan con "e" seguido de número (con o sin guion bajo)
+    names_to = "Station",
+    values_to = "Number"
+  ) %>% 
+  mutate(Station = str_replace(Station, "^e_?(\\d+)$", function(x) {
+    num <- str_extract(x, "\\d+")
+    paste0("E_", str_pad(num, 2, pad = "0"))
+  })) %>% 
+  mutate(
+    distance = if_else(Station %in% c("E_70", "E_73", "E_74"), "Near", "Far")
+  )
+
+
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+library(ggthemes)
+
+# Toal
+resumen <- faunaices3 %>%
+  group_by(familia, Station, distance) %>%
+  summarise(total = sum(Number, na.rm = TRUE), .groups = "drop")
+
+
+
+
+# por estación
+
+
+# 2. Gráfico con etiquetas verticales usando ggrepel
+estacion <- ggplot(resumen, aes(x = reorder(familia, -total), 
+                                y = total, fill = distance)) +
+  geom_bar(stat = "identity") +
+  geom_text_repel(
+    aes(label = ifelse(total > 0, total, "")),
+    direction = "y",
+    nudge_y = 1,
+    size = 3,
+    max.overlaps = Inf,
+    box.padding = 0.2,
+    segment.size = 0.2,
+    segment.alpha = 0.5
+  ) +
+  facet_wrap(~ Station, ncol=3) +
+  scale_fill_manual(values = c("Near" = "red", "Far" = "black")) +
+  labs(
+    title = "Abundance total by family by station by distance to river",
+    x = "",
+    y = "Total number",
+    fill = "Distance to river"
+  ) +
+  theme_few() +
+  theme(
+    axis.text.x = element_text(angle = 45, 
+                               vjust = 1,
+                               hjust = 1,
+                               size =8),
+    strip.text = element_text(face = "bold"),
+    legend.position = "bottom"
+  )
+estacion
+
+
+# by lig¡festyle
+
+resumen2 <- faunaices3 %>%
+  group_by(familia, Station, lifestyle) %>%
+  summarise(total = sum(Number, na.rm = TRUE), .groups = "drop")
+
+
+# 2. Gráfico con etiquetas verticales usando ggrepel
+estacion2 <- ggplot(resumen2, aes(x = reorder(familia, -total), 
+                                y = total, fill = lifestyle)) +
+  geom_bar(stat = "identity") +
+  geom_text_repel(
+    aes(label = ifelse(total > 0, total, "")),
+    angle = 90,            # <--- esto hace que el número esté en vertical
+    direction = "y",
+    nudge_y = 1,
+    size = 3,
+    max.overlaps = Inf,
+    box.padding = 0.2,
+    segment.size = 0.2,
+    segment.alpha = 0.5
+  ) +
+  facet_wrap(~ Station, ncol=3) +
+  scale_fill_viridis_d(option ="C")+
+  labs(
+    title = "Abundance total by family by station by lifestyle",
+    x = "",
+    y = "Total number",
+    fill = "Lifestyle"
+  ) +
+  theme_few() +
+  theme(
+    axis.text.x = element_text(angle = 45, 
+                               vjust = 1,
+                               hjust = 1,
+                               size =8),
+    strip.text = element_text(face = "bold"),
+    legend.position = "bottom"
+  )
+estacion2
+
+
+# 2. Gráfico con etiquetas usando ggrepel
+
+library(ggrepel)
+
+total <- ggplot(resumen2, aes(x = reorder(familia, -total), 
+                              y = total, fill = lifestyle)) +
+  geom_bar(stat = "identity") +
+ 
+  scale_fill_viridis_d(option = "G") +
+  labs(
+    title = "Abundance total by family by lifestyle",
+    x = "",
+    y = "Total number",
+    fill = "Lifestyle"
+  ) +
+  theme_few() +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+
+total
+
+
+# by lig¡festyle
+
+resumen3 <- faunaices3 %>%
+  group_by(familia, Station, lifestyle, distance) %>%
+  summarise(total = sum(Number, na.rm = TRUE), .groups = "drop")
+
+
+# 2. Gráfico con etiquetas verticales usando ggrepel
+estacion3 <- ggplot(resumen3, aes(x = reorder(familia, -total), 
+                                  y = total, fill = lifestyle)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(distance~ ., ncol=3) +
+  scale_fill_viridis_d(option ="C")+
+  labs(
+    title = "Abundance total by family by station by lifestyle",
+    x = "",
+    y = "Total number",
+    fill = "Lifestyle"
+  ) +
+  theme_few() +
+  theme(
+    axis.text.x = element_text(angle = 45, 
+                               vjust = 1,
+                               hjust = 1,
+                               size =8),
+    strip.text = element_text(face = "bold"),
+    legend.position = "bottom"
+  )
+estacion3
+

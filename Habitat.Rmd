@@ -58,6 +58,8 @@ library(geosphere)
 library(sp)
 library(sf)
 library(marmap)
+library(ggrepel)
+library(rnaturalearth)
 ```
 
 
@@ -452,7 +454,18 @@ draga_sf <- st_as_sf(draga_filtrada, coords = c("gpxx_lon", "gpxx_lat"), crs = 4
 
 # Filtrar las estaciones deseadas
 draga_labels <- draga_sf %>%
-  filter(Estacion %in% c("249", "232", "234", "232R"))
+  filter(Estacion %in% c("55", 
+                         "59",
+                         "60",
+                         "63",
+                         "64",
+                         "65",
+                         "68",
+                         "69",
+                         "70",
+                         "72",
+                         "73",
+                         "74"))
 
 # Crear el gráfico principal
 dragayoli <- ggplot() +
@@ -474,7 +487,7 @@ dragayoli <- ggplot() +
                    seed = 1234) +  # para reproducibilidad
   theme_few() +
   xlim(-7.2, -6.3) +
-  ylim(36.65, 37.3)
+  ylim(36.9, 37.3)
 
 dragayoli
 
@@ -486,10 +499,10 @@ europe_map <- ne_countries(continent = "Europe",
 
 # Crear el mapa de Europa con el rectángulo de la zona de interés
 inset_map <- ggplot() +
-  geom_sf(data = europe_map, fill = "#fee8c8", color = "gray50") +
-  geom_rect(aes(xmin = -7.2, xmax = -6.3, ymin = 36.65, ymax = 37.3),
+  geom_sf(data = europe_map, fill = "white", color = "gray50") +
+  geom_rect(aes(xmin = -7.2, xmax = -6.3, ymin = 36.9, ymax = 37.3),
             fill = NA, color = "red",  size = 0.8) +
-  coord_sf(xlim = c(-12, 20), ylim = c(34, 50)) +
+  coord_sf(xlim = c(-12, 15), ylim = c(34, 45)) +
   theme_void()
 inset_map
 
