@@ -3,6 +3,10 @@
 library(readxl)
 library(tidyverse)
 library(janitor)
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+library(ggthemes)
 fauna <- read_excel("MEGAFAUNA/FAUNA_MUESTREOS_AVANZADA.xlsx", 
                                        sheet = "DATOS")
 
@@ -267,7 +271,6 @@ print(permanova)
 faunaices <- read_excel("DATOS/MEGAFAUNA/FAUNA_MUESTREOS_AVANZADA-2.xlsx", 
                         sheet = "Sheet1")
 faunaices2 <- janitor::clean_names(faunaices)
-glimpse(fauna)
 
 faunaices3 <- faunaices2 %>%
   pivot_longer(
@@ -280,14 +283,11 @@ faunaices3 <- faunaices2 %>%
     paste0("E_", str_pad(num, 2, pad = "0"))
   })) %>% 
   mutate(
-    distance = if_else(Station %in% c("E_70", "E_73", "E_74"), "Near", "Far")
+    distance = if_else(Station %in% c("E_70","E_72", "E_73", "E_74"), "Far", "Near")
   )
 
 
-library(dplyr)
-library(ggplot2)
-library(ggrepel)
-library(ggthemes)
+
 
 # Toal
 resumen <- faunaices3 %>%
@@ -314,8 +314,8 @@ estacion <- ggplot(resumen, aes(x = reorder(familia, -total),
     segment.size = 0.2,
     segment.alpha = 0.5
   ) +
-  facet_wrap(~ Station, ncol=3) +
-  scale_fill_manual(values = c("Near" = "red", "Far" = "black")) +
+  facet_wrap(~ Station, ncol=1) +
+  scale_fill_manual(values = c("Near" = "black", "Far" = "red")) +
   labs(
     title = "Abundance total by family by station by distance to river",
     x = "",
@@ -376,6 +376,46 @@ estacion2 <- ggplot(resumen2, aes(x = reorder(familia, -total),
 estacion2
 
 
+# tipo de alimentacion
+
+
+resumen4 <- faunaices3 %>%
+  group_by(familia, Station, diet) %>%
+  summarise(total = sum(Number, na.rm = TRUE), .groups = "drop")
+
+
+# 2. Gráfico con etiquetas verticales usando ggrepel
+estacion4 <- ggplot(resumen4, aes(x = reorder(familia, -total), 
+                                  y = total, fill = diet)) +
+  geom_bar(stat = "identity") +
+  geom_text_repel(
+    aes(label = ifelse(total > 0, total, "")),
+    angle = 90,            # <--- esto hace que el número esté en vertical
+    direction = "y",
+    nudge_y = 1,
+    size = 3,
+    max.overlaps = Inf,
+    box.padding = 0.2,
+    segment.size = 0.2,
+    segment.alpha = 0.5
+  ) +
+  facet_wrap(~ Station, ncol=1) +
+  scale_fill_viridis_d(option ="F")+
+  labs(
+    title = "Abundance total by family by station by diet",
+    x = "",
+    y = "",
+    fill = "Type diet"
+  ) +
+  theme_few() +
+  theme(
+    axis.text.x = element_text(angle = 90, 
+                               vjust = 1,
+                               hjust = 1,
+                               size =10),
+    strip.text = element_text(face = "bold"))
+estacion4
+
 # 2. Gráfico con etiquetas usando ggrepel
 
 library(ggrepel)
@@ -403,15 +443,15 @@ total
 # by lig¡festyle
 
 resumen3 <- faunaices3 %>%
-  group_by(familia, Station, lifestyle, distance) %>%
+  group_by(familia, Station, lifestyle) %>%
   summarise(total = sum(Number, na.rm = TRUE), .groups = "drop")
 
 
 # 2. Gráfico con etiquetas verticales usando ggrepel
 estacion3 <- ggplot(resumen3, aes(x = reorder(familia, -total), 
-                                  y = total, fill = lifestyle)) +
+                                  y = total, fill= lifestyle)) +
   geom_bar(stat = "identity") +
-  facet_wrap(distance~ ., ncol=3) +
+  facet_wrap(Station~ ., ncol=1) +
   scale_fill_viridis_d(option ="C")+
   labs(
     title = "Abundance total by family by station by lifestyle",
@@ -429,4 +469,7 @@ estacion3 <- ggplot(resumen3, aes(x = reorder(familia, -total),
     legend.position = "bottom"
   )
 estacion3
+
+
+# Añadir Materria organica y granulometria
 
