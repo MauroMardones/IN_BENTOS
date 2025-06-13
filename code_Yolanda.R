@@ -304,17 +304,7 @@ resumen <- faunaices3 %>%
 estacion <- ggplot(resumen, aes(x = reorder(familia, -total), 
                                 y = total, fill = distance)) +
   geom_bar(stat = "identity") +
-  geom_text_repel(
-    aes(label = ifelse(total > 0, total, "")),
-    direction = "y",
-    nudge_y = 1,
-    size = 3,
-    max.overlaps = Inf,
-    box.padding = 0.2,
-    segment.size = 0.2,
-    segment.alpha = 0.5
-  ) +
-  facet_wrap(~ Station, ncol=1) +
+  facet_wrap(~ Station, ncol=3) +
   scale_fill_manual(values = c("Near" = "black", "Far" = "red")) +
   labs(
     title = "Abundance total by family by station by distance to river",
@@ -337,7 +327,7 @@ estacion
 # by lig¡festyle
 
 resumen2 <- faunaices3 %>%
-  group_by(familia, Station, lifestyle) %>%
+  group_by(familia, Station, lifestyle, distance) %>%
   summarise(total = sum(Number, na.rm = TRUE), .groups = "drop")
 
 
@@ -345,18 +335,7 @@ resumen2 <- faunaices3 %>%
 estacion2 <- ggplot(resumen2, aes(x = reorder(familia, -total), 
                                 y = total, fill = lifestyle)) +
   geom_bar(stat = "identity") +
-  geom_text_repel(
-    aes(label = ifelse(total > 0, total, "")),
-    angle = 90,            # <--- esto hace que el número esté en vertical
-    direction = "y",
-    nudge_y = 1,
-    size = 3,
-    max.overlaps = Inf,
-    box.padding = 0.2,
-    segment.size = 0.2,
-    segment.alpha = 0.5
-  ) +
-  facet_wrap(~ Station, ncol=3) +
+  facet_wrap(~ Station, ncol=2) +
   scale_fill_viridis_d(option ="C")+
   labs(
     title = "Abundance total by family by station by lifestyle",
@@ -364,12 +343,12 @@ estacion2 <- ggplot(resumen2, aes(x = reorder(familia, -total),
     y = "Total number",
     fill = "Lifestyle"
   ) +
-  theme_few() +
+  theme_minimal() +
   theme(
-    axis.text.x = element_text(angle = 45, 
+    axis.text.x = element_text(angle = 90, 
                                vjust = 1,
                                hjust = 1,
-                               size =8),
+                               size =10),
     strip.text = element_text(face = "bold"),
     legend.position = "bottom"
   )
@@ -421,7 +400,7 @@ estacion4
 library(ggrepel)
 
 total <- ggplot(resumen2, aes(x = reorder(familia, -total), 
-                              y = total, fill = lifestyle)) +
+                              y = total, fill = distance)) +
   geom_bar(stat = "identity") +
  
   scale_fill_viridis_d(option = "G") +
@@ -451,7 +430,7 @@ resumen3 <- faunaices3 %>%
 estacion3 <- ggplot(resumen3, aes(x = reorder(familia, -total), 
                                   y = total, fill= lifestyle)) +
   geom_bar(stat = "identity") +
-  facet_wrap(Station~ ., ncol=1) +
+  facet_wrap(Station~ ., ncol=3) +
   scale_fill_viridis_d(option ="C")+
   labs(
     title = "Abundance total by family by station by lifestyle",
@@ -471,5 +450,5 @@ estacion3 <- ggplot(resumen3, aes(x = reorder(familia, -total),
 estacion3
 
 
-# Añadir Materria organica y granulometria
+# Añadir Materria organica y granulometría
 
